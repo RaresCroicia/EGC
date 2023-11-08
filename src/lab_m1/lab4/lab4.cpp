@@ -34,6 +34,13 @@ void Lab4::Init()
     mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
     meshes[mesh->GetMeshID()] = mesh;
 
+    Mesh* mesh1 = new Mesh("box1");
+    mesh1->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
+    meshes[mesh1->GetMeshID()] = mesh1;
+
+    Mesh* mesh2 = new Mesh("box2");
+    mesh2->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
+    meshes[mesh2->GetMeshID()] = mesh2;
     // Initialize tx, ty and tz (the translation steps)
     translateX = 0;
     translateY = 0;
@@ -70,14 +77,14 @@ void Lab4::RenderScene() {
     modelMatrix = glm::mat4(1);
     modelMatrix *= transform3D::Translate(0.0f, 0.5f, -1.5f);
     modelMatrix *= transform3D::Scale(scaleX, scaleY, scaleZ);
-    RenderMesh(meshes["box"], shaders["Simple"], modelMatrix);
+    RenderMesh(meshes["box1"], shaders["Simple"], modelMatrix);
 
     modelMatrix = glm::mat4(1);
     modelMatrix *= transform3D::Translate(2.5f, 0.5f, -1.5f);
     modelMatrix *= transform3D::RotateOX(angularStepOX);
     modelMatrix *= transform3D::RotateOY(angularStepOY);
     modelMatrix *= transform3D::RotateOZ(angularStepOZ);
-    RenderMesh(meshes["box"], shaders["VertexNormal"], modelMatrix);
+    RenderMesh(meshes["box2"], shaders["VertexNormal"], modelMatrix);
 }
 
 void Lab4::Update(float deltaTimeSeconds)
@@ -98,6 +105,7 @@ void Lab4::Update(float deltaTimeSeconds)
 
     // TODO(student): render the scene again, in the new viewport
     DrawCoordinateSystem();
+    RenderScene();
 }
 
 void Lab4::FrameEnd()
@@ -113,13 +121,75 @@ void Lab4::FrameEnd()
 
 void Lab4::OnInputUpdate(float deltaTime, int mods)
 {
-    // TODO(student): Add transformation logic
+    int speed = 5;
+    
+    if (window->KeyHold(GLFW_KEY_W))
+    {
+        translateZ -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_S))
+    {
+        translateZ += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_A))
+    {
+        translateX -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_D))
+    {
+        translateX += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_R))
+    {
+        translateY += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_F))
+    {
+        translateY -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_1))
+    {
+        scaleX -= speed * deltaTime;
+        scaleY -= speed * deltaTime;
+        scaleZ -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_2))
+    {
+        scaleX += speed * deltaTime;
+        scaleY += speed * deltaTime;
+        scaleZ += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_3))
+    {
+        angularStepOX += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_4))
+    {
+        angularStepOX -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_5))
+    {
+        angularStepOY += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_6))
+    {
+        angularStepOY -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_7))
+    {
+        angularStepOZ += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_8))
+    {
+        angularStepOZ -= speed * deltaTime;
+    }
 
 }
 
 
 void Lab4::OnKeyPress(int key, int mods)
 {
+    int viewportSpeed = 10;
     // Add key press event
     if (key == GLFW_KEY_SPACE)
     {
@@ -136,8 +206,28 @@ void Lab4::OnKeyPress(int key, int mods)
             break;
         }
     }
-    
-    // TODO(student): Add viewport movement and scaling logic
+    if (key == GLFW_KEY_I) {
+        miniViewportArea.y += viewportSpeed;
+    }    
+    if (key == GLFW_KEY_K) {
+        miniViewportArea.y -= viewportSpeed;
+    }
+    if (key == GLFW_KEY_J) {
+        miniViewportArea.x -= viewportSpeed;
+    }
+    if (key == GLFW_KEY_L) {
+        miniViewportArea.x += viewportSpeed;
+    }
+    if (key == GLFW_KEY_O) {
+        float ratio = (float)miniViewportArea.width / miniViewportArea.height;
+        miniViewportArea.width += viewportSpeed * ratio;
+        miniViewportArea.height += viewportSpeed;
+    }
+    if (key == GLFW_KEY_U) {
+        float ratio = (float)miniViewportArea.width / miniViewportArea.height;
+        miniViewportArea.width -= viewportSpeed * ratio;
+        miniViewportArea.height -= viewportSpeed;
+    }
 }
 
 

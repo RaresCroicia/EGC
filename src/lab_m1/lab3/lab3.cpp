@@ -43,7 +43,8 @@ void Lab3::Init()
     // then in the `cx` and `cy` class variables (see the header). Use
     // `corner` and `squareSide`. These two class variables will be used
     // in the `Update()` function. Think about it, why do you need them?
-
+    cx = corner.x + squareSide / 2;
+    cy = corner.y + squareSide / 2;
     // Initialize tx and ty (the translation steps)
     translateX = 0;
     translateY = 0;
@@ -84,30 +85,58 @@ void Lab3::Update(float deltaTimeSeconds)
     // in order to create animations. Use the class variables in the
     // class header, and if you need more of them to complete the task,
     // add them over there!
+    glm::vec3 corner = glm::vec3(0, 0, 0);
+    float squareSide = 100;
+    
+    if(translateX > 1280 || translateX < 0)
+        multiplier *= -1;
 
+    translateX += multiplier * 100 * deltaTimeSeconds;
+    translateY = 500;
+    
+    angularStep += multiplier * deltaTimeSeconds;
+    int distanceBetweenWheels = 200;
+
+    /*
     modelMatrix = glm::mat3(1);
-    modelMatrix *= transform2D::Translate(150, 250);
-    // TODO(student): Create animations by multiplying the current
-    // transform matrix with the matrices you just implemented.
-    // Remember, the last matrix in the chain will take effect first!
-
+    modelMatrix *= transform2D::Translate(translateX, translateY);
+    modelMatrix *= transform2D::Rotate(angularStep);
     RenderMesh2D(meshes["square1"], shaders["VertexColor"], modelMatrix);
 
     modelMatrix = glm::mat3(1);
-    modelMatrix *= transform2D::Translate(400, 250);
-    // TODO(student): Create animations by multiplying the current
-    // transform matrix with the matrices you just implemented
-    // Remember, the last matrix in the chain will take effect first!
-
+    modelMatrix *= transform2D::Translate(250 + translateX, translateY);
+    modelMatrix *= transform2D::Rotate(angularStep);
+    modelMatrix *= transform2D::Scale(scaleX, scaleY);
     RenderMesh2D(meshes["square2"], shaders["VertexColor"], modelMatrix);
 
     modelMatrix = glm::mat3(1);
-    modelMatrix *= transform2D::Translate(650, 250);
-    // TODO(student): Create animations by multiplying the current
-    // transform matrix with the matrices you just implemented
-    // Remember, the last matrix in the chain will take effect first!
-
+    modelMatrix *= transform2D::Scale(scaleX * 0.1f, scaleY * 0.1f);
+    modelMatrix *= transform2D::Translate(350 + translateX, translateY);
+    modelMatrix *= transform2D::Rotate(-angularStep);
     RenderMesh2D(meshes["square3"], shaders["VertexColor"], modelMatrix);
+    */
+
+    modelMatrix = glm::mat3(1);
+    modelMatrix *= transform2D::Translate(corner.x + translateX, corner.y + translateY);
+    modelMatrix *= transform2D::Scale(2, 1);
+    RenderMesh2D(meshes["square1"], shaders["VertexColor"], modelMatrix);
+
+    modelMatrix = glm::mat3(1);
+    modelMatrix *= transform2D::Translate(corner.x + translateX, corner.y + translateY - 0.5f);
+    modelMatrix *= transform2D::Scale(0.5f, 0.5f);
+    modelMatrix *= transform2D::Rotate(-angularStep);
+    modelMatrix *= transform2D::Translate(-cx, -cy);
+    RenderMesh2D(meshes["square2"], shaders["VertexColor"], modelMatrix);
+
+    modelMatrix = glm::mat3(1);
+    modelMatrix *= transform2D::Translate(corner.x + translateX + distanceBetweenWheels, corner.y + translateY - 0.5f);
+    modelMatrix *= transform2D::Scale(0.5f, 0.5f);
+    modelMatrix *= transform2D::Rotate(-angularStep);
+    modelMatrix *= transform2D::Translate(-cx, -cy);
+    RenderMesh2D(meshes["square3"], shaders["VertexColor"], modelMatrix);
+
+
+    
 }
 
 

@@ -33,7 +33,7 @@ namespace m1
         float translateX, translateY;
         float scaleX, scaleY;
         float angularStep;
-
+        int multiplier = 1;
         // TODO(student): If you need any other class variables, define them here.
 
     };
