@@ -35,5 +35,7 @@ namespace m1
         Mesh *actual;
         int cycle;
         std::string meshess[3];
+        GLenum cullFace;
+        GLenum polygonMode;
     };
 }   // namespace m1

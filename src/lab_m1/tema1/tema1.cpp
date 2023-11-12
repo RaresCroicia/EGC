@@ -3,6 +3,9 @@
 #include <vector>
 #include <iostream>
 
+#include "core/engine.h"
+#include "utils/gl_utils.h"
+
 using namespace std;
 using namespace m1;
 
@@ -15,8 +18,6 @@ using namespace m1;
 
 Tema1::Tema1()
 {
-    // TODO(student): Never forget to initialize class variables!
-
 }
 
 
@@ -27,68 +28,110 @@ Tema1::~Tema1()
 
 void Tema1::Init()
 {
-    // Load a mesh from file into GPU memory. We only need to do it once,
-    // no matter how many times we want to draw this mesh.
-    position = glm::vec3(0, 0, 0);
-    color[0] = 0;
-    color[1] = 0;
-    color[2] = 0;
-    color[3] = 1;
-        
-    meshess[0] = "iepure"; 
-    meshess[1] = "sfera"; 
-    meshess[2] = "ceasca";
+    glm::ivec2 resolution = window->GetResolution();
+    auto camera = GetSceneCamera();
+    camera->SetOrthographic(0, (float)resolution.x, 0, (float)resolution.y, 0.01f, 400);
+    camera->SetPosition(glm::vec3(0, 0, 50));
+    camera->SetRotation(glm::vec3(0, 0, 0));
+    camera->Update();
+    GetCameraInput()->SetActive(false);
 
     {
-        Mesh* mesh = new Mesh("iepure");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "animals"), "bunny.obj");
-        meshes[mesh->GetMeshID()] = mesh;
+        vector<VertexFormat> vertices = {
+            VertexFormat(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0)),
+            VertexFormat(glm::vec3(0, 0.5f, 0), glm::vec3(1, 0, 0)),
+            VertexFormat(glm::vec3(0.5f, 0, 0), glm::vec3(1, 0, 0)),
+            VertexFormat(glm::vec3(0.5f, 0.5f, 0), glm::vec3(1, 0, 0))
+        };
+
+        vector<unsigned int> indices = {
+            0, 1, 2,
+            1, 3, 2
+        };
+
+        CreateMesh("square", vertices, indices);
     }
+
+}
+
+
+
+void Tema1::CreateMesh(const char *name, const std::vector<VertexFormat> &vertices, const std::vector<unsigned int> &indices)
+{
+    unsigned int VAO = 0;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    unsigned int VBO = 0;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+    unsigned int IBO = 0;
+    glGenBuffers(1, &IBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[0]) * indices.size(), &indices[0], GL_STATIC_DRAW);
+
+    // ========================================================================
+    // This section demonstrates how the GPU vertex shader program
+    // receives data. It will be learned later, when GLSL shaders will be
+    // introduced. For the moment, just think that each property value from
+    // our vertex format needs to be sent to a certain channel, in order to
+    // know how to receive it in the GLSL vertex shader.
+
+    // Set vertex position attribute
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexFormat), 0);
+
+    // Set vertex normal attribute
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VertexFormat), (void*)(sizeof(glm::vec3)));
+
+    // Set texture coordinate attribute
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexFormat), (void*)(2 * sizeof(glm::vec3)));
+
+    // Set vertex color attribute
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(VertexFormat), (void*)(2 * sizeof(glm::vec3) + sizeof(glm::vec2)));
+    // ========================================================================
+
+    glBindVertexArray(0);
+
+    // Check for OpenGL errors
+    if (GetOpenGLError() == GL_INVALID_OPERATION)
     {
-        Mesh* mesh = new Mesh("sfera");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
-        meshes[mesh->GetMeshID()] = mesh;
+        cout << "\t[NOTE] : For students : DON'T PANIC! This error should go away when completing the tasks." << std::endl;
+        cout << "\t[NOTE] : For developers : This happens because OpenGL core spec >=3.1 forbids null VAOs." << std::endl;
     }
-    {
-        Mesh* mesh = new Mesh("ceasca");
-        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "teapot.obj");
-        meshes[mesh->GetMeshID()] = mesh;
-    }
-    // TODO(student): Load some more meshes. The value of RESOURCE_PATH::MODELS
-    // is actually a path on disk, go there and you will find more meshes.
-    cycle = 0;
+
+    // Mesh information is saved into a Mesh object
+    meshes[name] = new Mesh(name);
+    meshes[name]->InitFromBuffer(VAO, static_cast<unsigned int>(indices.size()));
 }
 
 
 void Tema1::FrameStart()
 {
+    // Clears the color buffer (using the previously set color) and depth buffer
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glm::ivec2 resolution = window->GetResolution();
+
+    // Sets the screen area where to draw
+    glViewport(0, 0, resolution.x, resolution.y);
 }
 
 
 void Tema1::Update(float deltaTimeSeconds)
 {
-    glm::ivec2 resolution = window->props.resolution;
+    glLineWidth(3);
+    glPointSize(5);
 
-    // Sets the clear color for the color buffer
-
-    // TODO(student): Generalize the arguments of `glClearColor`.
-    // You can, for example, declare three variables in the class header,
-    // that will store the color components (red, green, blue).
-    glClearColor(color[0], color[1], color[2], color[3]);
-
-    // Clears the color buffer (using the previously set color) and depth buffer
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Sets the screen area where to draw
-    glViewport(0, 0, resolution.x, resolution.y);
-
-    
-    RenderMesh(meshes[meshess[cycle]], position, glm::vec3(0.1f, 0.1f, 0.1f));
-
-    // TODO(student): We need to render (a.k.a. draw) the mesh that
-    // was previously loaded. We do this using `RenderMesh`. Check the
-    // signature of this function to see the meaning of its parameters.
-    // You can draw the same mesh any number of times.
+    RenderMesh(meshes["square"], shaders["VertexColor"], glm::vec3(0, 0.5f, 1.5f), glm::vec3(0.25f));
 
 }
 
@@ -107,56 +150,12 @@ void Tema1::FrameEnd()
 
 void Tema1::OnInputUpdate(float deltaTime, int mods)
 {
-    float speed = 5.0f;
-    if(window->MouseHold(GLFW_MOUSE_BUTTON_2))
-        return;
-    // Treat continuous update based on input
-    if(window->KeyHold(GLFW_KEY_W)) {
-        position.z -= speed * deltaTime;
-    }
-    if(window->KeyHold(GLFW_KEY_S)) {
-        position.z += speed * deltaTime;
-    }
-    if(window->KeyHold(GLFW_KEY_D)) {
-        position.x += speed * deltaTime;
-    }
-    if(window->KeyHold(GLFW_KEY_A)) {
-        position.x -= speed * deltaTime;
-    }
-    if(window->KeyHold(GLFW_KEY_Q)) {
-        position.y -= speed * deltaTime;
-    }
-    if(window->KeyHold(GLFW_KEY_E)) {
-        position.y += speed * deltaTime;
-    }
-
-    // TODO(student): Add some key hold events that will let you move
-    // a mesh instance on all three axes. You will also need to
-    // generalize the position used by `RenderMesh`.
-
 }
 
 
 void Tema1::OnKeyPress(int key, int mods)
 {
-    // Add key press event
-    if (key == GLFW_KEY_F) {
-        // TODO(student): Change the values of the color components.
-        color[0] = min(color[0] + 0.01f, 1.0f);
-        color[1] = min(color[1] + 0.02f, 1.0f);
-        color[2] = min(color[2] + 0.04f, 1.0f);
-    }
-
     
-    // TODO(student): Add a key press event that will let you cycle
-    // through at least two meshes, rendered at the same position.
-    // You will also need to generalize the mesh name used by `RenderMesh`.
-
-    if(key == GLFW_KEY_M) {
-        cycle = (cycle+1) % 3;
-    }
-    
-
 }
 
 
@@ -186,11 +185,9 @@ void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods)
 
 void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY)
 {
-    // Treat mouse scroll event
 }
 
 
 void Tema1::OnWindowResize(int width, int height)
 {
-    // Treat window resize event
 }
