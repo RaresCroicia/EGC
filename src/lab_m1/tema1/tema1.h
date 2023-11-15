@@ -85,15 +85,18 @@ namespace m1
         void SpawnPoint();
         bool AddPoint();
         bool RemovePoint();
+        void SpawnEnemy();
         void HandleClickArena(int, int);
         void HandleClickPoints(int, int);
         void HandleClickShowcase(int, int);
         void HandleStillPressed(int, int);
         void HandleClickRemoveArena(int, int);
+        void DestroyIfEnemiesCollide();
         template <typename T>
         void Render(vector<T>, char);
         template <typename T>
         void Render(T, char);
+        void RenderWeapons();
         
 
         glm::vec3 position;
@@ -112,7 +115,7 @@ namespace m1
         vector<Square> squaresArena;
         vector<Square> squaresShowcase;
         float rombLength;
-        
+        Square basicSquare;
         
         bool is;
 
@@ -132,6 +135,9 @@ namespace m1
         float timeSinceLastSpawn;
         float spawnInterval;
         int pointsEverCreated;
+        int enemiesEverCreated = 0;
+        float timeSinceLastEnemy;
+        float enemySpawnInterval;
 
     };
 }   // namespace m1

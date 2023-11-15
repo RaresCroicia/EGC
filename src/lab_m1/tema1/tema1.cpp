@@ -31,7 +31,7 @@ void Tema1::CreateScene(glm::ivec2 resolution)
         float squareSide = 50;
         Square romb = Square("romb", glm::vec3(startingPointX, startingPointY, 0), squareSide, RED, true);
         Mesh *rombMesh = CreateRomb(romb.name, romb.leftBottomCorner, romb.length, romb.color, romb.fill);
-        AddMeshToList(rombMesh); 
+        AddMeshToList(rombMesh);
     }
     // Main Squares
     {
@@ -48,7 +48,7 @@ void Tema1::CreateScene(glm::ivec2 resolution)
                 Square squareObject = Square("squareArena" + std::to_string(index),
                                              glm::vec3(startingPointX + j * (squareSide + distanceBetweenSquares),
                                                        startingPointY + i * (squareSide + distanceBetweenSquares), 0),
-                                             squareSide, RED, true);
+                                             squareSide, CYAN, true);
                 squareObject.id = index;
                 squaresArena.push_back(squareObject);
                 Mesh *square = CreateSquare(squareObject.name, squareObject.leftBottomCorner, squareObject.length, squareObject.color, squareObject.fill);
@@ -135,8 +135,14 @@ void Tema1::Init()
     camera->Update();
     GetCameraInput()->SetActive(false);
     CreateScene(resolution);
+    basicSquare = Square("basicSquare", glm::vec3(0, 0, 1), rombLength, RED, true);
+    enemySpeed = 150;
+    weapons = vector<Square>(9, basicSquare);
     timeSinceLastSpawn = 0.0f;
     spawnInterval = 1.5f;
+    timeSinceLastEnemy = 0.0f;
+    enemySpawnInterval = 1.0f;
+    enemiesEverCreated = 0;
     pointsEverCreated = 0;
     isPressed = false;
     draggedWeapon = Square("draggedWeapon", glm::vec3(0, 0, 1), rombLength, RED, true);
@@ -166,8 +172,11 @@ void Tema1::Render(vector<T> array, char status)
 
     for (T element : array)
     {
-
-        if (isRotation && isTranslation)
+        if (isTranslation)
+        {
+            modelMatrix = Translate(element.translateX, 0) * glm::mat3(1);
+        }
+        else if (isRotation)
         {
             modelMatrix = Translate(element.center.x, element.center.y) * Rotate(element.angle) * Translate(-element.center.x, -element.center.y) * glm::mat3(1);
         }
@@ -186,7 +195,40 @@ void Tema1::Render(T element, char status)
     {
         modelMatrix = Translate(pressedMouseX, pressedMouseY) * glm::mat3(1);
     }
+    if (isScale)
+    {
+        modelMatrix = Translate(element.center.x, element.center.y) * Scale(element.scaleX, element.scaleY) * Translate(-element.center.x, -element.center.y) * glm::mat3(1);
+    }
     RenderMesh2D(meshes[element.name], shaders["VertexColor"], modelMatrix);
+}
+
+void Tema1::RenderWeapons()
+{
+    for (int i = 0; i < weapons.size(); i++)
+    {
+        if (weapons[i].name == "basicSquare")
+        {
+            continue;
+        }
+        if (weapons[i].isToRemove)
+        {
+            squaresArena[i].colorInside = BLACK;
+            if (weapons[i].scaleX <= 0)
+            {
+                weapons[i] = basicSquare;
+            }
+            else
+            {
+                weapons[i].scaleX -= 0.01;
+                weapons[i].scaleY -= 0.01;
+                Render(weapons[i], SCALE);
+            }
+        }
+        else
+        {
+            Render(weapons[i], 0);
+        }
+    }
 }
 
 void Tema1::Update(float deltaTimeSeconds)
@@ -199,12 +241,39 @@ void Tema1::Update(float deltaTimeSeconds)
         Render(rectangle, 0);
         Render(showcaseWeapons, 0);
         Render(lives, 0);
-        Render(points, ROTATION | TRANSLATION);
-        Render(usablePoints, 0);
-        if(isPressed) {
+        Render(points, ROTATION);
+        Render(usablePoints, ROTATION);
+        if (isPressed)
+        {
             Render(draggedWeapon, 0);
         }
-        Render(weapons, 0);
+        RenderWeapons();
+        Render(enemies, TRANSLATION);
+    }
+    {
+        DestroyIfEnemiesCollide();
+    }
+    if (lives.size() == 0)
+    {
+        cout << "GAME OVER\n";
+        sleep(10);
+        exit(0);
+    }
+    {
+        for (int i = 0; i < enemies.size(); i++)
+        {
+            if (enemies[i].center.x + enemies[i].translateX < rectangle.leftBottomCorner.x + rectangle.width / 2)
+            {
+                lives.erase(lives.begin() + lives.size() - 1);
+                cout << "remove\n";
+                enemies.erase(enemies.begin() + i);
+                i--;
+            }
+        }
+        for (Enemy &enemy : enemies)
+        {
+            enemy.translateX += -enemySpeed * deltaTimeSeconds;
+        }
     }
     {
         timeSinceLastSpawn += deltaTimeSeconds;
@@ -212,6 +281,14 @@ void Tema1::Update(float deltaTimeSeconds)
         {
             SpawnPoint();
             timeSinceLastSpawn = 0.0f;
+        }
+    }
+    {
+        timeSinceLastEnemy += deltaTimeSeconds;
+        if (timeSinceLastEnemy >= enemySpawnInterval)
+        {
+            SpawnEnemy();
+            timeSinceLastEnemy = 0.0f;
         }
     }
 }
@@ -257,9 +334,9 @@ bool Tema1::RemovePoint()
 void Tema1::SpawnPoint()
 {
     srand(time(NULL));
-    int chance = 50;
+    int chance = 0;
     int random = rand() % 100;
-    if (random <= chance)
+    if (random < chance)
     {
         if (points.size() <= MAX_STARS_AVAILABLE)
         {
@@ -271,6 +348,49 @@ void Tema1::SpawnPoint()
             points.push_back(point);
             Mesh *pointMesh = CreateStar(point.name, point.center, point.radius, point.color, point.fill);
             meshes[point.name] = pointMesh;
+        }
+    }
+}
+
+void Tema1::SpawnEnemy()
+{
+    srand(time(NULL));
+    int chance = 20;
+    int random = rand() % 100;
+    if (random < chance)
+    {
+        cout << "spawn\n";
+        srand(time(NULL));
+        int row = rand() % 3;
+        Enemy enemy = Enemy("enemy" + std::to_string(enemiesEverCreated++), glm::vec3(window->GetResolution().x, squaresArena[row * 3].leftBottomCorner.y + squaresArena[row * 3].length / 2, 5), 50, RED, BLUE, true);
+        enemies.push_back(enemy);
+        Mesh *enemyMesh = CreateEnemy(enemy.name, enemy.center, enemy.radius, enemy.color1, enemy.color2, enemy.fill);
+        meshes[enemy.name] = enemyMesh;
+    }
+}
+
+void Tema1::DestroyIfEnemiesCollide()
+{
+    for (int i = 0; i < enemies.size(); i++)
+    {
+        for (int j = 0; j < weapons.size(); j++)
+        {
+            if (weapons[j].name == "basicSquare")
+            {
+                continue;
+            }
+            if (weapons[j].isToRemove)
+            {
+                continue;
+            }
+
+            if (abs((enemies[i].center.x + enemies[i].translateX) - weapons[j].center.x) < weapons[j].length / 2 + enemies[i].radius && enemies[i].center.y == weapons[j].center.y)
+            {
+                cout << "destroy\n";
+                enemies.erase(enemies.begin() + i);
+                i--;
+                weapons[j].isToRemove = true;
+            }
         }
     }
 }
@@ -313,10 +433,6 @@ void Tema1::HandleClickArena(int mouseX, int mouseY)
         {
             if (RemovePoint())
             {
-                if (square.color == RED)
-                    square.color = GREEN;
-                else
-                    square.color = RED;
                 Mesh *squareMesh = CreateSquare(square.name, square.leftBottomCorner, square.length, square.color, square.fill);
                 meshes[square.name] = squareMesh;
                 squaresArena[i] = square;
@@ -351,38 +467,40 @@ void Tema1::HandleClickShowcase(int mouseX, int mouseY)
         if (mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
             mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length)
         {
-            {
-                isPressed = true;
-                draggedWeapon.leftBottomCorner = glm::vec3(mouseX, mouseY, 1);
-                draggedWeapon.color = square.colorInside;
-                meshes[draggedWeapon.name] = CreateRomb(draggedWeapon.name, draggedWeapon.leftBottomCorner, draggedWeapon.length, draggedWeapon.color, draggedWeapon.fill);
-            }
-
+            isPressed = true;
+            draggedWeapon.leftBottomCorner = glm::vec3(mouseX, mouseY, 1);
+            draggedWeapon.color = square.colorInside;
+            meshes[draggedWeapon.name] = CreateRomb(draggedWeapon.name, draggedWeapon.leftBottomCorner, draggedWeapon.length, draggedWeapon.color, draggedWeapon.fill);
             break;
         }
     }
 }
 
-void Tema1::HandleStillPressed(int mouseX, int mouseY) {
+void Tema1::HandleStillPressed(int mouseX, int mouseY)
+{
     mouseY = window->GetResolution().y - mouseY;
-    if(isPressed) {
+    if (isPressed)
+    {
         draggedWeapon.leftBottomCorner = glm::vec3(mouseX, mouseY, 1);
         Mesh *draggedWeaponMesh = CreateRomb(draggedWeapon.name, draggedWeapon.leftBottomCorner, draggedWeapon.length, draggedWeapon.color, draggedWeapon.fill);
         meshes[draggedWeapon.name] = draggedWeaponMesh;
     }
 }
 
-void Tema1::HandleClickRemoveArena(int mouseX, int mouseY) {
-    mouseY = window->GetResolution().y - mouseY;
-    for (Square square : squaresArena)
-        if(mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
-            mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length) {
-                if(square.colorInside != BLACK) {
-                    square.colorInside = BLACK;
-                    weapons.erase(weapons.begin() + square.id);
-                }
-                break;
+void Tema1::HandleClickRemoveArena(int mouseX, int mouseY)
+{
+    for (Square &square : squaresArena)
+        if (mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
+            mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length)
+        {
+            if (square.colorInside != BLACK)
+            {
+                cout << "remove\n";
+                square.colorInside = BLACK;
+                weapons[square.id].isToRemove = true;
             }
+            break;
+        }
 }
 
 void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
@@ -408,9 +526,10 @@ void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods)
     mouseY = window->GetResolution().y - mouseY;
     if (IS_BIT_SET(button, GLFW_MOUSE_BUTTON_LEFT))
     {
-        if (isPressed) {
+        if (isPressed)
+        {
             isPressed = false;
-            for (Square square : squaresArena)
+            for (Square &square : squaresArena)
             {
                 if (mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
                     mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length)
@@ -419,9 +538,10 @@ void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods)
                     {
                         // create weapon and put it there
                         square.colorInside = draggedWeapon.color;
-                        glm::vec3 position = square.leftBottomCorner + glm::vec3(square.length/4, square.length/2, 3);
+                        glm::vec3 position = square.leftBottomCorner + glm::vec3(square.length / 4, square.length / 2, 3);
                         Square weapon = Square("weapon" + std::to_string(square.id), position, rombLength + 5, square.colorInside, true);
-                        weapons.push_back(weapon);
+                        weapon.center = position + glm::vec3(rombLength / 2, 0, 0);
+                        weapons[square.id] = weapon;
                         Mesh *weaponMesh = CreateRomb(weapon.name, weapon.leftBottomCorner, weapon.length, weapon.color, weapon.fill);
                         meshes[weapon.name] = weaponMesh;
                     }
