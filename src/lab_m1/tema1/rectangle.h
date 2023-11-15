@@ -11,4 +11,6 @@ class Rectangle {
         float width, height;
         glm::vec3 color;
         bool fill;
+        glm::vec3 center;
+        float angle;
 };

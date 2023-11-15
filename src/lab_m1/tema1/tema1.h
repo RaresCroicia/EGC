@@ -10,7 +10,11 @@
 #define MAX_STARS_AVAILABLE 10
 #define MAX_POINTS 10
 
-#define RED glm::vec3(1, 0, 0)
+#define ROTATION 4
+#define SCALE 2
+#define TRANSLATION 1
+
+#define RED glm::vec3(0.729, 0.271, 0.239)
 #define GREEN glm::vec3(0, 1, 0)
 #define BLUE glm::vec3(0, 0, 1)
 #define YELLOW glm::vec3(1, 1, 0)
@@ -32,6 +36,35 @@ namespace m1
         void Init() override;
 
      private:
+
+        inline glm::mat3 Translate(float translateX, float translateY)
+        {
+            return glm::transpose(
+                    glm::mat3( 1, 0, translateX, 
+                            0, 1, translateY, 
+                            0, 0, 1)
+            ); 
+        }
+
+        // Scale matrix
+        inline glm::mat3 Scale(float scaleX, float scaleY)
+        {
+            return glm::transpose(
+                    glm::mat3( scaleX, 0, 0, 
+                            0, scaleY, 0, 
+                            0, 0, 1)
+            );
+        }
+
+        // Rotate matrix
+        inline glm::mat3 Rotate(float radians)
+        {
+            return glm::transpose(
+                    glm::mat3( cos(radians), -sin(radians), 0, 
+                            sin(radians), cos(radians), 0, 
+                            0, 0, 1)
+            );
+        }
         Mesh* CreateSquare(const std::string &name, glm::vec3 leftBottomCorner, float length, glm::vec3 color, bool fill = false);
         Mesh* CreateRectangle(const std::string &name, glm::vec3 leftBottomCorner, float width, float height, glm::vec3 color, bool fill);
         Mesh* CreateStar(const std::string &name, glm::vec3 center, float radius, glm::vec3 color, bool fill);
@@ -52,6 +85,16 @@ namespace m1
         void SpawnPoint();
         bool AddPoint();
         bool RemovePoint();
+        void HandleClickArena(int, int);
+        void HandleClickPoints(int, int);
+        void HandleClickShowcase(int, int);
+        void HandleStillPressed(int, int);
+        void HandleClickRemoveArena(int, int);
+        template <typename T>
+        void Render(vector<T>, char);
+        template <typename T>
+        void Render(T, char);
+        
 
         glm::vec3 position;
         GLclampf color[4];
@@ -60,18 +103,32 @@ namespace m1
         std::string meshess[3];
         GLenum cullFace;
         GLenum polygonMode;
-        vector<Square> squares;
         Rectangle rectangle;
         Circle star;
+        bool isPressed;
+        glm::vec3 pressedColor;
+        int pressedMouseX, pressedMouseY;
+        Square draggedWeapon;
+        vector<Square> squaresArena;
+        vector<Square> squaresShowcase;
+        float rombLength;
+        
+        
+        bool is;
+
+        vector<Square> showcaseWeapons;
+        vector<Circle> usablePoints;
 
         vector<Enemy> enemies;
         float enemySpeed;
+        
         vector<Circle> points;
+        
         vector<Circle> bullets;
         vector<Square> weapons;
+        
         vector<Square> lives; 
-        vector<Square> showcaseWeapons;
-        vector<Circle> usablePoints;
+        
         float timeSinceLastSpawn;
         float spawnInterval;
         int pointsEverCreated;

@@ -11,4 +11,5 @@ class Enemy {
         float radius;
         glm::vec3 color;
         bool fill;
+        float angle;
 };
