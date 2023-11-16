@@ -84,8 +84,9 @@ namespace m1
         void OnWindowResize(int width, int height) override;
         void SpawnPoint();
         bool AddPoint();
-        bool RemovePoint();
+        bool RemovePoint(int);
         void SpawnEnemy();
+        bool SpawnBullet();
         void HandleClickArena(int, int);
         void HandleClickPoints(int, int);
         void HandleClickShowcase(int, int);
@@ -97,8 +98,10 @@ namespace m1
         template <typename T>
         void Render(T, char);
         void RenderWeapons();
+        void RenderBullets(float);
+        string GetColor(glm::vec3);
         
-
+        string pickedColor = "nothing";
         glm::vec3 position;
         GLclampf color[4];
         Mesh *actual;
@@ -119,11 +122,14 @@ namespace m1
         
         bool is;
 
+        vector<Circle> showcasePoints;
+
         vector<Square> showcaseWeapons;
         vector<Circle> usablePoints;
 
         vector<Enemy> enemies;
         float enemySpeed;
+        float bulletSpeed;
         
         vector<Circle> points;
         
@@ -131,6 +137,9 @@ namespace m1
         vector<Square> weapons;
         
         vector<Square> lives; 
+
+        // unordered_map<glm::vec3, int> colorsCost;
+        unordered_map<string, int> colorsCost;
         
         float timeSinceLastSpawn;
         float spawnInterval;
@@ -138,6 +147,8 @@ namespace m1
         int enemiesEverCreated = 0;
         float timeSinceLastEnemy;
         float enemySpawnInterval;
+        float timeSinceLastBullet;
+        float bulletSpawnInterval;
 
     };
 }   // namespace m1

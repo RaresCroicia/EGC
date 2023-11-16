@@ -22,6 +22,19 @@ Tema1::~Tema1()
 {
 }
 
+string Tema1::GetColor(glm::vec3 color)
+{
+    if (color == ORANGE)
+        return "ORANGE";
+    if (color == YELLOW)
+        return "YELLOW";
+    if (color == BLUE)
+        return "BLUE";
+    if (color == MAGENTA)
+        return "MAGENTA";
+    return "UNDEFINED";
+}
+
 void Tema1::CreateScene(glm::ivec2 resolution)
 {
 
@@ -109,6 +122,23 @@ void Tema1::CreateScene(glm::ivec2 resolution)
     }
 
     {
+        for (Square showcaseWeapon : showcaseWeapons)
+        {
+            for (int i = 0; i < colorsCost[GetColor(showcaseWeapon.color)]; i++)
+            {
+                float startingPointX = showcaseWeapon.leftBottomCorner.x + i * 30;
+                float startingPointY = showcaseWeapon.leftBottomCorner.y - showcaseWeapon.length * 1.5f;
+                float length = showcaseWeapon.length / 2;
+                Circle star = Circle("cost" + std::to_string(i) + showcaseWeapon.name, glm::vec3(startingPointX, startingPointY, 0), 20, WHITE, true);
+                star.angle = 180;
+                showcasePoints.push_back(star);
+                Mesh *starMesh = CreateStar(star.name, star.center, star.radius, star.color, star.fill);
+                AddMeshToList(starMesh);
+            }
+        }
+    }
+
+    {
         float distanceBetweenLives = 10;
         for (int i = 0; i < 3; i++)
         {
@@ -134,17 +164,26 @@ void Tema1::Init()
     camera->SetRotation(glm::vec3(0, 0, 0));
     camera->Update();
     GetCameraInput()->SetActive(false);
+    colorsCost[GetColor(ORANGE)] = 2;
+    colorsCost[GetColor(YELLOW)] = 3;
+    colorsCost[GetColor(BLUE)] = 3;
+    colorsCost[GetColor(MAGENTA)] = 4;
     CreateScene(resolution);
     basicSquare = Square("basicSquare", glm::vec3(0, 0, 1), rombLength, RED, true);
     enemySpeed = 150;
     weapons = vector<Square>(9, basicSquare);
     timeSinceLastSpawn = 0.0f;
     spawnInterval = 1.5f;
+    bulletSpawnInterval = 2.f;
     timeSinceLastEnemy = 0.0f;
     enemySpawnInterval = 1.0f;
     enemiesEverCreated = 0;
     pointsEverCreated = 0;
     isPressed = false;
+    bulletSpeed = 50;
+    for(int i = 0; i < 10; i++)
+        AddPoint();
+
     draggedWeapon = Square("draggedWeapon", glm::vec3(0, 0, 1), rombLength, RED, true);
     Mesh *draggedWeaponMesh = CreateRomb(draggedWeapon.name, draggedWeapon.leftBottomCorner, draggedWeapon.length, draggedWeapon.color, draggedWeapon.fill);
     AddMeshToList(draggedWeaponMesh);
@@ -191,11 +230,15 @@ void Tema1::Render(T element, char status)
     bool isRotation = (status & ROTATION) == ROTATION;
     bool isScale = (status & SCALE) == SCALE;
     bool isTranslation = (status & TRANSLATION) == TRANSLATION;
-    if (isTranslation)
+    if (isTranslation && isRotation) 
+    {
+        modelMatrix = Translate(element.translateX, 0) * Translate(element.center.x, element.center.y) * Rotate(element.angle) * Translate(-element.center.x, -element.center.y) * glm::mat3(1);
+    }
+    else if (isTranslation)
     {
         modelMatrix = Translate(pressedMouseX, pressedMouseY) * glm::mat3(1);
     }
-    if (isScale)
+    else if (isScale)
     {
         modelMatrix = Translate(element.center.x, element.center.y) * Scale(element.scaleX, element.scaleY) * Translate(-element.center.x, -element.center.y) * glm::mat3(1);
     }
@@ -231,6 +274,32 @@ void Tema1::RenderWeapons()
     }
 }
 
+void Tema1::RenderBullets(float deltaTimeSeconds) {
+    for(Circle &bullet : bullets) {
+        bullet.translateX += bulletSpeed * 3 * deltaTimeSeconds;
+        bullet.angle += 50;
+        Render(bullet, TRANSLATION | ROTATION);
+    }
+}
+
+bool Tema1::SpawnBullet() {
+    for (Enemy enemy : enemies) {
+        for(Square weapon : weapons) {
+            // cout << weapon.center.y << ' ' << enemy.center.y << '\n';
+            // cout << GetColor(weapon.color) << ' ' << GetColor(enemy.color2) << '\n';
+            if(weapon.color == enemy.color2 && weapon.center.y == enemy.center.y) {
+                // cout << "Ar trebui sa intri\n";
+                Circle bullet = Circle("bullet" + std::to_string(bullets.size()), weapon.center, 50, weapon.color, true);
+                bullets.push_back(bullet);
+                Mesh *bulletMesh = CreateStar(bullet.name, bullet.center, bullet.radius, bullet.color, bullet.fill);
+                meshes[bullet.name] = bulletMesh;
+                return true;
+            } 
+        }
+    }
+    return false;
+}
+
 void Tema1::Update(float deltaTimeSeconds)
 {
     glLineWidth(3);
@@ -243,11 +312,13 @@ void Tema1::Update(float deltaTimeSeconds)
         Render(lives, 0);
         Render(points, ROTATION);
         Render(usablePoints, ROTATION);
+        Render(showcasePoints, ROTATION);
         if (isPressed)
         {
             Render(draggedWeapon, 0);
         }
         RenderWeapons();
+        RenderBullets(deltaTimeSeconds);
         Render(enemies, TRANSLATION);
     }
     {
@@ -256,7 +327,7 @@ void Tema1::Update(float deltaTimeSeconds)
     if (lives.size() == 0)
     {
         cout << "GAME OVER\n";
-        sleep(10);
+        sleep(1);
         exit(0);
     }
     {
@@ -291,6 +362,15 @@ void Tema1::Update(float deltaTimeSeconds)
             timeSinceLastEnemy = 0.0f;
         }
     }
+    {
+        timeSinceLastBullet += deltaTimeSeconds;
+        if(timeSinceLastBullet >= bulletSpawnInterval)
+        {
+            // cout << "VREAU\n";
+            if(SpawnBullet())
+                timeSinceLastBullet = 0.0f;
+        }
+    }
 }
 
 bool Tema1::AddPoint()
@@ -320,12 +400,15 @@ bool Tema1::AddPoint()
     return false;
 }
 
-bool Tema1::RemovePoint()
+bool Tema1::RemovePoint(int points)
 {
-    if (usablePoints.size() > 0)
+
+    if (usablePoints.size() >= points)
     {
-        meshes.erase(usablePoints[usablePoints.size() - 1].name);
-        usablePoints.erase(usablePoints.begin() + usablePoints.size() - 1);
+        for(int i = 0; i < points; i++){
+            meshes.erase(usablePoints[usablePoints.size() - 1].name);
+            usablePoints.erase(usablePoints.begin() + usablePoints.size() - 1);
+        }
         return true;
     }
     return false;
@@ -334,11 +417,11 @@ bool Tema1::RemovePoint()
 void Tema1::SpawnPoint()
 {
     srand(time(NULL));
-    int chance = 0;
+    int chance = 50;
     int random = rand() % 100;
     if (random < chance)
     {
-        if (points.size() <= MAX_STARS_AVAILABLE)
+        if (points.size() <= MAX_STARS_AVAILABLE && usablePoints.size() < 10)
         {
             float x = max(rand() % window->GetResolution().x, window->GetResolution().x / 2);
             float y = rand() % window->GetResolution().y;
@@ -362,7 +445,7 @@ void Tema1::SpawnEnemy()
         cout << "spawn\n";
         srand(time(NULL));
         int row = rand() % 3;
-        Enemy enemy = Enemy("enemy" + std::to_string(enemiesEverCreated++), glm::vec3(window->GetResolution().x, squaresArena[row * 3].leftBottomCorner.y + squaresArena[row * 3].length / 2, 5), 50, RED, BLUE, true);
+        Enemy enemy = Enemy("enemy" + std::to_string(enemiesEverCreated++), glm::vec3(window->GetResolution().x, squaresArena[row * 3].leftBottomCorner.y + squaresArena[row * 3].length / 2, 5), 50, RED, ORANGE, true);
         enemies.push_back(enemy);
         Mesh *enemyMesh = CreateEnemy(enemy.name, enemy.center, enemy.radius, enemy.color1, enemy.color2, enemy.fill);
         meshes[enemy.name] = enemyMesh;
@@ -431,12 +514,12 @@ void Tema1::HandleClickArena(int mouseX, int mouseY)
         if (mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
             mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length)
         {
-            if (RemovePoint())
-            {
-                Mesh *squareMesh = CreateSquare(square.name, square.leftBottomCorner, square.length, square.color, square.fill);
-                meshes[square.name] = squareMesh;
-                squaresArena[i] = square;
-            }
+            // if (RemovePoint())
+            // {
+            //     Mesh *squareMesh = CreateSquare(square.name, square.leftBottomCorner, square.length, square.color, square.fill);
+            //     meshes[square.name] = squareMesh;
+            //     squaresArena[i] = square;
+            // }
             break;
         }
     }
@@ -470,6 +553,7 @@ void Tema1::HandleClickShowcase(int mouseX, int mouseY)
             isPressed = true;
             draggedWeapon.leftBottomCorner = glm::vec3(mouseX, mouseY, 1);
             draggedWeapon.color = square.colorInside;
+            pickedColor = GetColor(draggedWeapon.color);
             meshes[draggedWeapon.name] = CreateRomb(draggedWeapon.name, draggedWeapon.leftBottomCorner, draggedWeapon.length, draggedWeapon.color, draggedWeapon.fill);
             break;
         }
@@ -534,9 +618,10 @@ void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods)
                 if (mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
                     mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length)
                 {
-                    if (square.colorInside == BLACK)
+                    if (square.colorInside == BLACK && RemovePoint(colorsCost[pickedColor]))
                     {
                         // create weapon and put it there
+                        pickedColor = "nothing";
                         square.colorInside = draggedWeapon.color;
                         glm::vec3 position = square.leftBottomCorner + glm::vec3(square.length / 4, square.length / 2, 3);
                         Square weapon = Square("weapon" + std::to_string(square.id), position, rombLength + 5, square.colorInside, true);

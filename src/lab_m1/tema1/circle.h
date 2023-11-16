@@ -13,5 +13,6 @@ class Circle : public Common {
         glm::vec3 color;
         bool fill;
         float angle;
+        int cost;
         
 };
