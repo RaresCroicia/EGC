@@ -13,4 +13,5 @@ class Enemy : public Common{
         glm::vec3 color1, color2;
         bool fill;
         float angle;
+        bool isToDelete = false;
 };

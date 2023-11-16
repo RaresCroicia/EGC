@@ -164,13 +164,13 @@ void Tema1::Init()
     camera->SetRotation(glm::vec3(0, 0, 0));
     camera->Update();
     GetCameraInput()->SetActive(false);
-    colorsCost[GetColor(ORANGE)] = 2;
-    colorsCost[GetColor(YELLOW)] = 3;
-    colorsCost[GetColor(BLUE)] = 3;
-    colorsCost[GetColor(MAGENTA)] = 4;
+    colorsCost[GetColor(ORANGE)] = 1;
+    colorsCost[GetColor(YELLOW)] = 2;
+    colorsCost[GetColor(BLUE)] = 2;
+    colorsCost[GetColor(MAGENTA)] = 3;
     CreateScene(resolution);
     basicSquare = Square("basicSquare", glm::vec3(0, 0, 1), rombLength, RED, true);
-    enemySpeed = 150;
+    enemySpeed = 75;
     weapons = vector<Square>(9, basicSquare);
     timeSinceLastSpawn = 0.0f;
     spawnInterval = 1.5f;
@@ -236,11 +236,11 @@ void Tema1::Render(T element, char status)
     }
     else if (isTranslation)
     {
-        modelMatrix = Translate(pressedMouseX, pressedMouseY) * glm::mat3(1);
+        modelMatrix = Translate(element.translateX, 0) * glm::mat3(1);
     }
     else if (isScale)
     {
-        modelMatrix = Translate(element.center.x, element.center.y) * Scale(element.scaleX, element.scaleY) * Translate(-element.center.x, -element.center.y) * glm::mat3(1);
+        modelMatrix = Translate(element.translateX, element.translateY) * Translate(element.center.x, element.center.y) * Scale(element.scaleX, element.scaleY) * Translate(-element.center.x, -element.center.y) * glm::mat3(1);
     }
     RenderMesh2D(meshes[element.name], shaders["VertexColor"], modelMatrix);
 }
@@ -277,34 +277,80 @@ void Tema1::RenderWeapons()
 void Tema1::RenderBullets(float deltaTimeSeconds) {
     for(Circle &bullet : bullets) {
         bullet.translateX += bulletSpeed * 3 * deltaTimeSeconds;
-        bullet.angle += 50;
+        bullet.angle += 50 * deltaTimeSeconds;
         Render(bullet, TRANSLATION | ROTATION);
     }
 }
 
+void Tema1::RenderEnemies() {
+    for(int i = 0; i < enemies.size(); i++) {
+        if(enemies[i].isToDelete){
+            // cout << "E deletable\n";
+            if(enemies[i].scaleX <= 0) {
+                enemies.erase(enemies.begin() + i);
+                i--;
+                continue;
+            }
+            enemies[i].scaleX -= 0.01;
+            enemies[i].scaleY -= 0.01;
+            Render(enemies[i], SCALE);
+        }
+        else 
+            Render(enemies[i], TRANSLATION);
+    }
+}
+
 bool Tema1::SpawnBullet() {
+    bool status = false;
     for (Enemy enemy : enemies) {
         for(Square weapon : weapons) {
             // cout << weapon.center.y << ' ' << enemy.center.y << '\n';
             // cout << GetColor(weapon.color) << ' ' << GetColor(enemy.color2) << '\n';
-            if(weapon.color == enemy.color2 && weapon.center.y == enemy.center.y) {
+            if(weapon.color == enemy.color2 && weapon.center.y == enemy.center.y && !enemy.isToDelete) {
                 // cout << "Ar trebui sa intri\n";
-                Circle bullet = Circle("bullet" + std::to_string(bullets.size()), weapon.center, 50, weapon.color, true);
+                Circle bullet = Circle("bullet" + std::to_string(bulletsEverCreated++), weapon.center, 50, weapon.color, true);
                 bullets.push_back(bullet);
                 Mesh *bulletMesh = CreateStar(bullet.name, bullet.center, bullet.radius, bullet.color, bullet.fill);
                 meshes[bullet.name] = bulletMesh;
-                return true;
+                status = true;
             } 
         }
     }
-    return false;
+    return status;
+}
+
+void Tema1::DamageIfBulletCollides() {
+    for(int j = 0; j < enemies.size(); j++) {
+        for(int i = 0; i < bullets.size(); i++) {
+            if(abs((enemies[j].center.x + enemies[j].translateX) - (bullets[i].center.x + bullets[i].translateX)) < enemies[j].radius + bullets[i].radius && enemies[j].color2 == bullets[i].color && bullets[i].center.y == enemies[j].center.y) {
+                bullets.erase(bullets.begin() + i);
+                i--;
+                if(enemies[j].color1 == GREEN) {
+                    enemies[j].color1 = RED;
+                    Mesh *mesh = CreateEnemy(enemies[j].name, enemies[j].center, enemies[j].radius, enemies[j].color1, enemies[j].color2, enemies[j].fill);
+                    meshes[enemies[j].name] = mesh;
+                }
+                else if(enemies[j].color1 == RED) {
+                    enemies[j].color1 = BLACK;
+                    Mesh *mesh = CreateEnemy(enemies[j].name, enemies[j].center, enemies[j].radius, enemies[j].color1, enemies[j].color2, enemies[j].fill);
+                    meshes[enemies[j].name] = mesh;
+                }
+                else if(enemies[j].color1 == BLACK) {
+                    // cout << "Il fac deletable\n";
+                    enemies[j].isToDelete = true;
+                }
+            }
+        }
+    }
 }
 
 void Tema1::Update(float deltaTimeSeconds)
 {
     glLineWidth(3);
     glPointSize(5);
-    {
+    if(isGameOver)
+        return;
+    {   
         Render(squaresArena, 0);
         Render(squaresShowcase, 0);
         Render(rectangle, 0);
@@ -319,16 +365,15 @@ void Tema1::Update(float deltaTimeSeconds)
         }
         RenderWeapons();
         RenderBullets(deltaTimeSeconds);
-        Render(enemies, TRANSLATION);
+        RenderEnemies();
     }
     {
         DestroyIfEnemiesCollide();
+        DamageIfBulletCollides();
     }
     if (lives.size() == 0)
     {
-        cout << "GAME OVER\n";
-        sleep(1);
-        exit(0);
+        isGameOver = true;
     }
     {
         for (int i = 0; i < enemies.size(); i++)
@@ -343,6 +388,8 @@ void Tema1::Update(float deltaTimeSeconds)
         }
         for (Enemy &enemy : enemies)
         {
+            if(enemy.isToDelete)
+                continue;
             enemy.translateX += -enemySpeed * deltaTimeSeconds;
         }
     }
@@ -440,12 +487,14 @@ void Tema1::SpawnEnemy()
     srand(time(NULL));
     int chance = 20;
     int random = rand() % 100;
+    glm::vec3 colors[] = {ORANGE, BLUE, YELLOW, MAGENTA};
+    int randomColor = rand() % 4;
     if (random < chance)
     {
         cout << "spawn\n";
         srand(time(NULL));
         int row = rand() % 3;
-        Enemy enemy = Enemy("enemy" + std::to_string(enemiesEverCreated++), glm::vec3(window->GetResolution().x, squaresArena[row * 3].leftBottomCorner.y + squaresArena[row * 3].length / 2, 5), 50, RED, ORANGE, true);
+        Enemy enemy = Enemy("enemy" + std::to_string(enemiesEverCreated++), glm::vec3(window->GetResolution().x, squaresArena[row * 3].leftBottomCorner.y + squaresArena[row * 3].length / 2, 5), 50, GREEN, colors[randomColor], true);
         enemies.push_back(enemy);
         Mesh *enemyMesh = CreateEnemy(enemy.name, enemy.center, enemy.radius, enemy.color1, enemy.color2, enemy.fill);
         meshes[enemy.name] = enemyMesh;
@@ -470,8 +519,6 @@ void Tema1::DestroyIfEnemiesCollide()
             if (abs((enemies[i].center.x + enemies[i].translateX) - weapons[j].center.x) < weapons[j].length / 2 + enemies[i].radius && enemies[i].center.y == weapons[j].center.y)
             {
                 cout << "destroy\n";
-                enemies.erase(enemies.begin() + i);
-                i--;
                 weapons[j].isToRemove = true;
             }
         }
@@ -506,24 +553,6 @@ void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
     HandleStillPressed(mouseX, mouseY);
 }
 
-void Tema1::HandleClickArena(int mouseX, int mouseY)
-{
-    for (int i = 0; i < squaresArena.size(); i++)
-    {
-        Square square = squaresArena[i];
-        if (mouseX >= square.leftBottomCorner.x && mouseX <= square.leftBottomCorner.x + square.length &&
-            mouseY >= square.leftBottomCorner.y && mouseY <= square.leftBottomCorner.y + square.length)
-        {
-            // if (RemovePoint())
-            // {
-            //     Mesh *squareMesh = CreateSquare(square.name, square.leftBottomCorner, square.length, square.color, square.fill);
-            //     meshes[square.name] = squareMesh;
-            //     squaresArena[i] = square;
-            // }
-            break;
-        }
-    }
-}
 
 void Tema1::HandleClickPoints(int mouseX, int mouseY)
 {
@@ -593,7 +622,6 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
     mouseY = res.y - mouseY;
     if (IS_BIT_SET(button, GLFW_MOUSE_BUTTON_LEFT))
     {
-        HandleClickArena(mouseX, mouseY);
         HandleClickPoints(mouseX, mouseY);
         HandleClickShowcase(mouseX, mouseY);
     }

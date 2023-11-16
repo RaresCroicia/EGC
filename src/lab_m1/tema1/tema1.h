@@ -87,18 +87,19 @@ namespace m1
         bool RemovePoint(int);
         void SpawnEnemy();
         bool SpawnBullet();
-        void HandleClickArena(int, int);
         void HandleClickPoints(int, int);
         void HandleClickShowcase(int, int);
         void HandleStillPressed(int, int);
         void HandleClickRemoveArena(int, int);
         void DestroyIfEnemiesCollide();
+        void DamageIfBulletCollides();
         template <typename T>
         void Render(vector<T>, char);
         template <typename T>
         void Render(T, char);
         void RenderWeapons();
         void RenderBullets(float);
+        void RenderEnemies();
         string GetColor(glm::vec3);
         
         string pickedColor = "nothing";
@@ -121,6 +122,7 @@ namespace m1
         Square basicSquare;
         
         bool is;
+        bool isGameOver = false;
 
         vector<Circle> showcasePoints;
 
@@ -145,6 +147,7 @@ namespace m1
         float spawnInterval;
         int pointsEverCreated;
         int enemiesEverCreated = 0;
+        int bulletsEverCreated = 0;
         float timeSinceLastEnemy;
         float enemySpawnInterval;
         float timeSinceLastBullet;
