@@ -277,7 +277,7 @@ void Tema1::RenderWeapons()
 void Tema1::RenderBullets(float deltaTimeSeconds) {
     for(Circle &bullet : bullets) {
         bullet.translateX += bulletSpeed * 3 * deltaTimeSeconds;
-        bullet.angle += 50 * deltaTimeSeconds;
+        bullet.angle += - 10 * deltaTimeSeconds;
         Render(bullet, TRANSLATION | ROTATION);
     }
 }
