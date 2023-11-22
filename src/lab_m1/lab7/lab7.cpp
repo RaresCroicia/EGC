@@ -39,6 +39,12 @@ void Lab7::Init()
     }
 
     {
+        Mesh* mesh = new Mesh("sphere2");
+        mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "sphere.obj");
+        meshes[mesh->GetMeshID()] = mesh;
+    }
+
+    {
         Mesh* mesh = new Mesh("plane");
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "plane50.obj");
         meshes[mesh->GetMeshID()] = mesh;
@@ -56,6 +62,7 @@ void Lab7::Init()
     // Light & material properties
     {
         lightPosition = glm::vec3(0, 1, 1);
+        secondLightPosition = glm::vec3(0, 1, 1);
         materialShininess = 30;
         materialKd = 0.5;
         materialKs = 0.5;
@@ -113,6 +120,13 @@ void Lab7::Update(float deltaTimeSeconds)
         modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
         RenderMesh(meshes["sphere"], shaders["Simple"], modelMatrix);
     }
+
+    {
+        glm::mat4 modelMatrix = glm::mat4(1);
+        modelMatrix = glm::translate(modelMatrix, secondLightPosition);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+        RenderMesh(meshes["sphere2"], shaders["Simple"], modelMatrix);
+    }
 }
 
 
@@ -132,12 +146,29 @@ void Lab7::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 & modelM
 
     // Set shader uniforms for light & material properties
     // TODO(student): Set light position uniform
+    GLint loc_light_position = glGetUniformLocation(shader->program, "light_position");
+    glUniform3fv(loc_light_position, 1, glm::value_ptr(lightPosition));
+
+    GLint loc_second_light_position = glGetUniformLocation(shader->program, "second_light_position");
+    glUniform3fv(loc_second_light_position, 1, glm::value_ptr(secondLightPosition));
 
     glm::vec3 eyePosition = GetSceneCamera()->m_transform->GetWorldPosition();
+    
     // TODO(student): Set eye position (camera position) uniform
+    GLint loc_eye_position = glGetUniformLocation(shader->program, "eye_position");
+    glUniform3fv(loc_eye_position, 1, glm::value_ptr(eyePosition));
 
     // TODO(student): Set material property uniforms (shininess, kd, ks, object color)
+    GLint loc_material_shininess = glGetUniformLocation(shader->program, "material_shininess");
+    glUniform1i(loc_material_shininess, materialShininess);
+    GLint loc_material_kd = glGetUniformLocation(shader->program, "material_kd");
+    glUniform1f(loc_material_kd, materialKd);
+    GLint loc_material_ks = glGetUniformLocation(shader->program, "material_ks");
+    glUniform1f(loc_material_ks, materialKs);
+    GLint loc_object_color = glGetUniformLocation(shader->program, "object_color");
+    glUniform3fv(loc_object_color, 1, glm::value_ptr(color));
 
+    
     // Bind model matrix
     GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
     glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
