@@ -36,7 +36,7 @@ namespace m1
         void Init() override;
 
      private:
-
+        // 2D Transformations
         inline glm::mat3 Translate(float translateX, float translateY)
         {
             return glm::transpose(
@@ -46,7 +46,6 @@ namespace m1
             ); 
         }
 
-        // Scale matrix
         inline glm::mat3 Scale(float scaleX, float scaleY)
         {
             return glm::transpose(
@@ -56,7 +55,6 @@ namespace m1
             );
         }
 
-        // Rotate matrix
         inline glm::mat3 Rotate(float radians)
         {
             return glm::transpose(
@@ -65,15 +63,21 @@ namespace m1
                             0, 0, 1)
             );
         }
+
+        // CREATE MESHES
         Mesh* CreateSquare(const std::string &name, glm::vec3 leftBottomCorner, float length, glm::vec3 color, bool fill = false);
         Mesh* CreateRectangle(const std::string &name, glm::vec3 leftBottomCorner, float width, float height, glm::vec3 color, bool fill);
         Mesh* CreateStar(const std::string &name, glm::vec3 center, float radius, glm::vec3 color, bool fill);
         Mesh* CreateRomb(const std::string &name, glm::vec3 leftBottomCorner, float length, glm::vec3 color, bool fill);
         Mesh* CreateEnemy(const std::string &name, glm::vec3 center, float radius, glm::vec3 color, glm::vec3 color2, bool fill);
+
+        // SCENE CREATION AND RENDERING
         void FrameStart() override;
         void Update(float deltaTimeSeconds) override;
         void FrameEnd() override;
         void CreateScene(glm::ivec2 resolution);
+
+        // EVENTS
         void OnInputUpdate(float deltaTime, int mods) override;
         void OnKeyPress(int key, int mods) override;
         void OnKeyRelease(int key, int mods) override;
@@ -82,76 +86,87 @@ namespace m1
         void OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) override;
         void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
         void OnWindowResize(int width, int height) override;
+
+        // SPAWNERS
         void SpawnPoint();
-        bool AddPoint();
-        bool RemovePoint(int);
         void SpawnEnemy();
         bool SpawnBullet();
+
+        // POINT HANDLERS
+        bool AddPoint();
+        bool RemovePoint(int);
+
+        // EVENT HANDLERS
         void HandleClickPoints(int, int);
         void HandleClickShowcase(int, int);
         void HandleStillPressed(int, int);
         void HandleClickRemoveArena(int, int);
+        void HandleRelease(int, int);
+
+        // COLLIDE HANDLERS
         void DestroyIfEnemiesCollide();
         void DamageIfBulletCollides();
+
+        // RENDERERS
         template <typename T>
         void Render(vector<T>, char);
+
         template <typename T>
         void Render(T, char);
+
         void RenderWeapons();
         void RenderBullets(float);
         void RenderEnemies();
+
+        // AUXILIARY FUNCTIONS
         string GetColor(glm::vec3);
         
+        // DRAG & DROP VARIABLES
         string pickedColor = "nothing";
-        glm::vec3 position;
-        GLclampf color[4];
-        Mesh *actual;
-        int cycle;
-        std::string meshess[3];
-        GLenum cullFace;
-        GLenum polygonMode;
-        Rectangle rectangle;
-        Circle star;
         bool isPressed;
-        glm::vec3 pressedColor;
-        int pressedMouseX, pressedMouseY;
+
+        // GAME VARIABLES
+        GLclampf color[4];
+        Rectangle rectangle;
         Square draggedWeapon;
-        vector<Square> squaresArena;
-        vector<Square> squaresShowcase;
+
+        // SHAPE VARIABLES
         float rombLength;
         Square basicSquare;
         
-        bool is;
+        // GAME STATE VARIABLES
         bool isGameOver = false;
 
+        // GAME OBJECTS
+        vector<Square> squaresArena;
+        vector<Square> squaresShowcase;
         vector<Circle> showcasePoints;
-
         vector<Square> showcaseWeapons;
         vector<Circle> usablePoints;
-
         vector<Enemy> enemies;
-        float enemySpeed;
-        float bulletSpeed;
-        
         vector<Circle> points;
-        
         vector<Circle> bullets;
         vector<Square> weapons;
-        
         vector<Square> lives; 
-
-        // unordered_map<glm::vec3, int> colorsCost;
         unordered_map<string, int> colorsCost;
-        
+
+        // GAME VARIABLES
+        float enemySpeed;
+        float bulletSpeed;
+
         float timeSinceLastSpawn;
         float spawnInterval;
-        int pointsEverCreated;
-        int enemiesEverCreated = 0;
-        int bulletsEverCreated = 0;
         float timeSinceLastEnemy;
         float enemySpawnInterval;
         float timeSinceLastBullet;
         float bulletSpawnInterval;
 
+        int pointsEverCreated;
+        int enemiesEverCreated = 0;
+        int bulletsEverCreated = 0;
+        
+        int chanceSpawnEnemy;
+        int chanceSpawnPoint;
+
     };
-}   // namespace m1
+}

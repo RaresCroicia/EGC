@@ -41,6 +41,10 @@ void Lab4::Init()
     Mesh* mesh2 = new Mesh("box2");
     mesh2->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
     meshes[mesh2->GetMeshID()] = mesh2;
+
+    Mesh* mesh3 = new Mesh("tank");
+    mesh3->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "tank.obj");
+    meshes[mesh3->GetMeshID()] = mesh3;
     // Initialize tx, ty and tz (the translation steps)
     translateX = 0;
     translateY = 0;
@@ -69,22 +73,27 @@ void Lab4::FrameStart()
 }
 
 void Lab4::RenderScene() {
+    // modelMatrix = glm::mat4(1);
+    // modelMatrix *= transform3D::Translate(-2.5f, 0.5f, -1.5f);
+    // modelMatrix *= transform3D::Translate(translateX, translateY, translateZ);
+    // RenderMesh(meshes["box"], shaders["VertexNormal"], modelMatrix);
+
+    // modelMatrix = glm::mat4(1);
+    // modelMatrix *= transform3D::Translate(0.0f, 0.5f, -1.5f);
+    // modelMatrix *= transform3D::Scale(scaleX, scaleY, scaleZ);
+    // RenderMesh(meshes["box1"], shaders["Simple"], modelMatrix);
+
+    // modelMatrix = glm::mat4(1);
+    // modelMatrix *= transform3D::Translate(2.5f, 0.5f, -1.5f);
+    // modelMatrix *= transform3D::RotateOX(angularStepOX);
+    // modelMatrix *= transform3D::RotateOY(angularStepOY);
+    // modelMatrix *= transform3D::RotateOZ(angularStepOZ);
+    // RenderMesh(meshes["box2"], shaders["VertexNormal"], modelMatrix);
+
     modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(-2.5f, 0.5f, -1.5f);
     modelMatrix *= transform3D::Translate(translateX, translateY, translateZ);
-    RenderMesh(meshes["box"], shaders["VertexNormal"], modelMatrix);
-
-    modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(0.0f, 0.5f, -1.5f);
     modelMatrix *= transform3D::Scale(scaleX, scaleY, scaleZ);
-    RenderMesh(meshes["box1"], shaders["Simple"], modelMatrix);
-
-    modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(2.5f, 0.5f, -1.5f);
-    modelMatrix *= transform3D::RotateOX(angularStepOX);
-    modelMatrix *= transform3D::RotateOY(angularStepOY);
-    modelMatrix *= transform3D::RotateOZ(angularStepOZ);
-    RenderMesh(meshes["box2"], shaders["VertexNormal"], modelMatrix);
+    RenderMesh(meshes["tank"], shaders["VertexNormal"], modelMatrix);
 }
 
 void Lab4::Update(float deltaTimeSeconds)
@@ -122,20 +131,23 @@ void Lab4::FrameEnd()
 void Lab4::OnInputUpdate(float deltaTime, int mods)
 {
     int speed = 5;
-    
-    if (window->KeyHold(GLFW_KEY_W))
+    if(window->MouseHold(GLFW_MOUSE_BUTTON_RIGHT))
     {
-        translateZ -= speed * deltaTime;
-    }
-    if (window->KeyHold(GLFW_KEY_S))
-    {
-        translateZ += speed * deltaTime;
+        return;
     }
     if (window->KeyHold(GLFW_KEY_A))
     {
-        translateX -= speed * deltaTime;
+        translateZ -= speed * deltaTime;
     }
     if (window->KeyHold(GLFW_KEY_D))
+    {
+        translateZ += speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_W))
+    {
+        translateX -= speed * deltaTime;
+    }
+    if (window->KeyHold(GLFW_KEY_S))
     {
         translateX += speed * deltaTime;
     }
