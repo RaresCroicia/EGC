@@ -4,3 +4,5 @@ build*
 /**/obj
 components_hidden
 *.zip
+cmake-build-debug/
+.idea/
