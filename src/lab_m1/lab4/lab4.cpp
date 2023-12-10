@@ -42,9 +42,22 @@ void Lab4::Init()
     mesh2->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "primitives"), "box.obj");
     meshes[mesh2->GetMeshID()] = mesh2;
 
-    Mesh* mesh3 = new Mesh("tank");
-    mesh3->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "tank.obj");
+    Mesh* mesh3 = new Mesh("tankcorp");
+    mesh3->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "corp.obj");
     meshes[mesh3->GetMeshID()] = mesh3;
+
+    Mesh* mesh4 = new Mesh("tankteava");
+    mesh4->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "teava.obj");
+    meshes[mesh4->GetMeshID()] = mesh4;
+
+    Mesh* mesh5 = new Mesh("tankcap");
+    mesh5->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "cap.obj");
+    meshes[mesh5->GetMeshID()] = mesh5;
+
+    Mesh* mesh6 = new Mesh("tankroti");
+    mesh6->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "roti.obj");
+    meshes[mesh6->GetMeshID()] = mesh6;
+
     // Initialize tx, ty and tz (the translation steps)
     translateX = 0;
     translateY = 0;
@@ -91,9 +104,10 @@ void Lab4::RenderScene() {
     // RenderMesh(meshes["box2"], shaders["VertexNormal"], modelMatrix);
 
     modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(translateX, translateY, translateZ);
-    modelMatrix *= transform3D::Scale(scaleX, scaleY, scaleZ);
-    RenderMesh(meshes["tank"], shaders["VertexNormal"], modelMatrix);
+    RenderMesh(meshes["tankteava"], shaders["VertexNormal"], modelMatrix);
+    RenderMesh(meshes["tankcorp"], shaders["VertexNormal"], modelMatrix);
+    RenderMesh(meshes["tankcap"], shaders["VertexNormal"], modelMatrix);
+    RenderMesh(meshes["tankroti"], shaders["VertexNormal"], modelMatrix);
 }
 
 void Lab4::Update(float deltaTimeSeconds)
