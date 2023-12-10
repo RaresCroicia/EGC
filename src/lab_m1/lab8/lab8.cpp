@@ -23,6 +23,14 @@ Lab8::~Lab8()
 {
 }
 
+int getRandom() {
+    int chance = 33;
+    int r = rand() % 100;
+    if(r < chance) return -1;
+    if(r < 2 * chance) return 0;
+    return 1;
+}
+
 
 void Lab8::Init()
 {
@@ -60,6 +68,15 @@ void Lab8::Init()
         materialShininess = 30;
         materialKd = 0.5;
         materialKs = 0.5;
+    }
+
+    {
+        for(int i = 0; i < NUMBER_OF_LIGHTS; i++) {
+            point_light_pos[i] = glm::vec3(rand() % 100 / 100.0f, rand() % 100 / 100.0f, rand() % 100 / 100.0f);
+            point_light_color[i] = glm::vec3(rand() % 100 / 100.0f, rand() % 100 / 100.0f, rand() % 100 / 100.0f);
+            point_light_dir[i] = glm::vec3(getRandom(), getRandom(), getRandom());
+            type[i] = i == 0 ? 1 : 0;
+        }
     }
 }
 
@@ -116,9 +133,19 @@ void Lab8::Update(float deltaTimeSeconds)
     // Render the point light in the scene
     {
         glm::mat4 modelMatrix = glm::mat4(1);
-        modelMatrix = glm::translate(modelMatrix, lightPosition);
+        modelMatrix = glm::translate(modelMatrix, point_light_pos[0]);
         modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
         RenderMesh(meshes["sphere"], shaders["Simple"], modelMatrix);
+    }
+
+    // Render the point light in the scene
+    {
+        for(int i = 0; i < NUMBER_OF_LIGHTS; i++) {
+            glm::mat4 modelMatrix = glm::mat4(1);
+            modelMatrix = glm::translate(modelMatrix, point_light_pos[i]);
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+            RenderMesh(meshes["sphere"], shaders["Simple"], modelMatrix);
+        }
     }
 }
 
@@ -163,10 +190,24 @@ void Lab8::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 & modelM
     glUniform3f(object_color, color.r, color.g, color.b);
 
     // TODO(student): Set any other shader uniforms that you need
+    GLuint point_light_location = glGetUniformLocation(shader->program, "point_light_pos");
+    glUniform3fv(point_light_location, NUMBER_OF_LIGHTS, glm::value_ptr(point_light_pos[0]));
+
+    GLuint point_light_color_location = glGetUniformLocation(shader->program, "point_light_color");
+    glUniform3fv(point_light_color_location, NUMBER_OF_LIGHTS, glm::value_ptr(point_light_color[0]));
+
+    GLuint point_light_dir_location = glGetUniformLocation(shader->program, "point_light_dir");
+    glUniform3fv(point_light_dir_location, NUMBER_OF_LIGHTS, glm::value_ptr(point_light_dir[0]));
+
+    GLuint type_location = glGetUniformLocation(shader->program, "type");
+    glUniform1iv(type_location, NUMBER_OF_LIGHTS, &type[0]);
 
     // Bind model matrix
     GLint loc_model_matrix = glGetUniformLocation(shader->program, "Model");
     glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    GLuint cut_off_location = glGetUniformLocation(shader->program, "cut_off");
+    glUniform1f(cut_off_location, cut_off);
 
     // Bind view matrix
     glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
@@ -200,15 +241,31 @@ void Lab8::OnInputUpdate(float deltaTime, int mods)
         glm::vec3 right = GetSceneCamera()->m_transform->GetLocalOXVector();
         glm::vec3 forward = GetSceneCamera()->m_transform->GetLocalOZVector();
         forward = glm::normalize(glm::vec3(forward.x, 0, forward.z));
-
+        for(int i = 0; i < NUMBER_OF_LIGHTS; i++) {
         // Control light position using on W, A, S, D, E, Q
-        if (window->KeyHold(GLFW_KEY_W)) lightPosition -= forward * deltaTime * speed;
-        if (window->KeyHold(GLFW_KEY_A)) lightPosition -= right * deltaTime * speed;
-        if (window->KeyHold(GLFW_KEY_S)) lightPosition += forward * deltaTime * speed;
-        if (window->KeyHold(GLFW_KEY_D)) lightPosition += right * deltaTime * speed;
-        if (window->KeyHold(GLFW_KEY_E)) lightPosition += up * deltaTime * speed;
-        if (window->KeyHold(GLFW_KEY_Q)) lightPosition -= up * deltaTime * speed;
-
+            if (window->KeyHold(GLFW_KEY_W)) point_light_pos[i] -= forward * deltaTime * speed;
+            if (window->KeyHold(GLFW_KEY_A)) point_light_pos[i] -= right * deltaTime * speed;
+            if (window->KeyHold(GLFW_KEY_S)) point_light_pos[i] += forward * deltaTime * speed;
+            if (window->KeyHold(GLFW_KEY_D)) point_light_pos[i] += right * deltaTime * speed;
+            if (window->KeyHold(GLFW_KEY_E)) point_light_pos[i] += up * deltaTime * speed;
+            if (window->KeyHold(GLFW_KEY_Q)) point_light_pos[i] -= up * deltaTime * speed;
+            if(window->KeyHold(GLFW_KEY_I))
+                point_light_dir[i].x = min(1.0f, point_light_dir[i].x + 0.8f * deltaTime);
+            if(window->KeyHold(GLFW_KEY_K))
+                point_light_dir[i].x = max(-1.0f, point_light_dir[i].x - 0.8f * deltaTime);
+            if(window->KeyHold(GLFW_KEY_J))
+                point_light_dir[i].y = min(1.0f, point_light_dir[i].y + 0.8f * deltaTime);
+            if(window->KeyHold(GLFW_KEY_L))
+                point_light_dir[i].y = max(-1.0f, point_light_dir[i].y - 0.8f * deltaTime);
+            if(window->KeyHold(GLFW_KEY_U))
+                point_light_dir[i].z = min(1.0f, point_light_dir[i].z + 0.8f * deltaTime);
+            if(window->KeyHold(GLFW_KEY_O))
+                point_light_dir[i].z = max(-1.0f, point_light_dir[i].z - 0.8f * deltaTime);
+        }
+        if(window->KeyHold(GLFW_KEY_Z))
+            cut_off = max(0.0f, cut_off - 100 * deltaTime);
+        if(window->KeyHold(GLFW_KEY_X))
+            cut_off = min(90.0f, cut_off + 100 * deltaTime);
         // TODO(student): Set any other keys that you might need
 
     }
@@ -220,7 +277,15 @@ void Lab8::OnKeyPress(int key, int mods)
     // Add key press event
 
     // TODO(student): Set keys that you might need
+    if(key == GLFW_KEY_F) {
+        for(int i = 0; i < NUMBER_OF_LIGHTS; i++)
+            type[i] = (type[i] + 1) % 2;
+    }
 
+
+    if(key ==GLFW_KEY_1)
+        for(int i = 0; i < NUMBER_OF_LIGHTS; i++)
+            point_light_color[i] = glm::vec3(rand()%100/100.f, rand()%100/100.f, rand()%100/100.f);
 }
 
 
