@@ -13,6 +13,12 @@ uniform float material_kd;
 uniform float material_ks;
 uniform int material_shininess;
 
+uniform vec3 point_light_color[1];
+uniform vec3 point_light_pos[1];
+uniform vec3 point_light_dir[1];
+uniform int type[1];
+uniform float cut_off;
+
 // TODO(student): Declare any other uniforms
 
 uniform vec3 object_color;
@@ -20,30 +26,47 @@ uniform vec3 object_color;
 // Output
 layout(location = 0) out vec4 out_color;
 
+vec3 point_light_contribution(vec3 light_pos, vec3 light_color, vec3 light_dir, int type) {
+    float ambient_light = 0.25;
+    float specular_light = 0;
+    vec3 world_normal_copy = world_normal;
+    world_normal_copy = normalize(world_normal_copy);
+    vec3 color;
+    vec3 L = normalize(light_pos - world_position);
+    vec3 V = normalize(eye_position - world_position);
+    vec3 H = normalize(L + V);
+    vec3 R = reflect(-L, world_normal_copy);
+    float diffuse_light = material_kd * max(dot(world_normal_copy, L), 0);
+    if (diffuse_light > 0)
+    {
+        specular_light = material_ks * pow(max(dot(V, R), 0), material_shininess);
+    }
+    float d = distance(light_pos, world_position);
+    float attenuation = 1.0 / (1 + 0.1 * d + 0.05 * d * d);
+    float light = ambient_light + attenuation * (diffuse_light + specular_light);
+    if (type != 0) {
+        float cutoff = radians(cut_off);
+        light_dir = normalize(light_dir);
+        float spot_light = dot(-L, light_dir);
+        float spot_light_limit = cos(cutoff);
+        if(spot_light > spot_light_limit) {
+            float linear_att = (spot_light - spot_light_limit) / (1.0f - spot_light_limit);
+            float light_att_factor = pow(linear_att, 2);
+            light = ambient_light + light_att_factor * (diffuse_light + specular_light); 
+        } else {
+            light = ambient_light;
+        }
+    }
+    color = light_color * light; 
+    return color;
+}
 
 void main()
 {
-    // TODO(student): Define ambient, diffuse and specular light components
-    float ambient_light = 0.25;
-    float diffuse_light = 0;
-    float specular_light = 0;
-    // It's important to distinguish between "reflection model" and
-    // "shading method". In this shader, we are experimenting with the Phong
-    // (1975) and Blinn-Phong (1977) reflection models, and we are using the
-    // Phong (1975) shading method. Don't mix them up!
-    if (diffuse_light > 0)
+    vec3 color = vec3(0, 0, 0);
+    for(int i = 0; i < 1; i++)
     {
+        color += point_light_contribution(point_light_pos[i], point_light_color[i], point_light_dir[i], type[i]);
     }
-
-    // TODO(student): If (and only if) the light is a spotlight, we need to do
-    // some additional things.
-
-    // TODO(student): Compute the total light. You can just add the components
-    // together, but if you're feeling extra fancy, you can add individual
-    // colors to the light components. To do that, pick some vec3 colors that
-    // you like, and multiply them with the respective light components.
-
-    // TODO(student): Write pixel out color
-    out_color = vec4(1);
-
+    out_color = vec4(color, 1);
 }

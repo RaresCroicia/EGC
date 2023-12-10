@@ -3,6 +3,7 @@
 #include "components/simple_scene.h"
 #include "components/transform.h"
 
+#define NUMBER_OF_LIGHTS 1
 
 namespace m1
 {
@@ -37,6 +38,10 @@ namespace m1
         float materialKs;
 
         // TODO(student): If you need any other class variables, define them here.
-
+        glm::vec3 point_light_pos[NUMBER_OF_LIGHTS];
+        glm::vec3 point_light_color[NUMBER_OF_LIGHTS];
+        glm::vec3 point_light_dir[NUMBER_OF_LIGHTS];
+        int type[NUMBER_OF_LIGHTS];
+        float cut_off = 30;
     };
 }   // namespace m1
