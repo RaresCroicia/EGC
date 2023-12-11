@@ -25,10 +25,10 @@ void main()
     // TODO(student): Send output to fragment shader
     fragPos = position;
     // fragNormal = vec3(Model * vec4(normal, 0.0));
-    fragNormal = normal + vec3(sin(Time), cos(Time), sin(Time) + cos(Time));
+    fragNormal = normal;
     fragTexture = texture;
     fragColor = color + vec3(sin(Time), cos(Time), sin(Time)*cos(Time));
     // TODO(student): Compute gl_Position
-    vec4 pos = Model * vec4(position, 1.0) + vec4(sin(Time), cos(Time), sin(Time) + cos(Time), 0.0);
+    vec4 pos = Model * vec4(position, 1.0);
     gl_Position = Projection * View * pos;
 }

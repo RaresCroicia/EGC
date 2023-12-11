@@ -31,7 +31,6 @@ void Tema2::Init()
     zNear = .01f;
 
     camera = new implemented::Camera();
-    camera->Set(glm::vec3(0, 2, 3.5f), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
 
 	{
 		Mesh* mesh = new Mesh("tankcap");
@@ -65,6 +64,9 @@ void Tema2::Init()
         shaders[shader->GetName()] = shader;
 	}
 
+    camera->Set(glm::vec3(0, 1, 1), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
+	projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
+
 }
 
 
@@ -84,10 +86,14 @@ void Tema2::Update(float deltaTimeSeconds)
 {
 
 	glm::mat4 modelMatrix = glm::mat4(1);
-	RenderMesh(meshes["tankcap"], shaders["myshader"], modelMatrix);
-	RenderMesh(meshes["tankcorp"], shaders["myshader"], modelMatrix);
-	RenderMesh(meshes["tankroti"], shaders["myshader"], modelMatrix);
-	RenderMesh(meshes["tankteava"], shaders["myshader"], modelMatrix);
+	// RenderMesh(meshes["tankcap"], shaders["VertexNormal"], modelMatrix);
+	// RenderMesh(meshes["tankcorp"], shaders["VertexNormal"], modelMatrix);
+	// RenderMesh(meshes["tankroti"], shaders["VertexNormal"], modelMatrix);
+	// RenderMesh(meshes["tankteava"], shaders["VertexNormal"], modelMatrix);
+	RenderSimpleMesh(meshes["tankcap"], shaders["myshader"], modelMatrix);
+	RenderSimpleMesh(meshes["tankcorp"], shaders["myshader"], modelMatrix);
+	RenderSimpleMesh(meshes["tankroti"], shaders["myshader"], modelMatrix);
+	RenderSimpleMesh(meshes["tankteava"], shaders["myshader"], modelMatrix);
 }
 
 
@@ -99,28 +105,40 @@ void Tema2::FrameEnd()
 
 void Tema2::RenderMesh(Mesh * mesh, Shader * shader, const glm::mat4 & modelMatrix)
 {
-    if (!mesh || !shader || !shader->GetProgramID())
+    if (!mesh || !shader || !shader->program)
         return;
 
     // Render an object using the specified shader and the specified position
-    glUseProgram(shader->program);
+    shader->Use();
+    glUniformMatrix4fv(shader->loc_view_matrix, 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+    glUniformMatrix4fv(shader->loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+    glUniformMatrix4fv(shader->loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-    GLint modelLocation = glGetUniformLocation(shader->program, "Model");
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    mesh->Render();
+}
 
-    GLint viewLocation = glGetUniformLocation(shader->program, "View");
-    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
-    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+void Tema2::RenderSimpleMesh(Mesh * mesh, Shader * shader, const glm::mat4 & modelMatrix)
+{
+	if (!mesh || !shader || !shader->program)
+		return;
 
+	glUseProgram(shader->program);
 
-    GLint projectionLocation = glGetUniformLocation(shader->program, "Projection");
-	projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
-    // projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	GLint modelLocation = glGetUniformLocation(shader->program, "Model");
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+	GLint viewLocation = glGetUniformLocation(shader->program, "View");
+	glm::mat4 viewMatrix = camera->GetViewMatrix();
+	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+
+	GLint projectionLocation = glGetUniformLocation(shader->program, "Projection");
+	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+	GLint timeLocation = glGetUniformLocation(shader->program, "Time");
+	glUniform1f(timeLocation, Engine::GetElapsedTime());
 
 	mesh->Render();
 }
-
 
 /*
  *  These are callback functions. To find more about callbacks and
@@ -192,18 +210,11 @@ void Tema2::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
         float sensivityOY = 0.001f;
 
         if (window->GetSpecialKeyState() == 0) {
-            // TODO(student): Rotate the camera in first-person mode around
-            // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
-            // variables for setting up the rotation speed.
             camera->RotateFirstPerson_OX(-deltaY * sensivityOX);
             camera->RotateFirstPerson_OY(-deltaX * sensivityOY);
-
         }
 
         if (window->GetSpecialKeyState() & GLFW_MOD_CONTROL) {
-            // TODO(student): Rotate the camera in third-person mode around
-            // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
-            // variables for setting up the rotation speed.
             camera->RotateThirdPerson_OX(-deltaY * sensivityOX);
             camera->RotateThirdPerson_OY(-deltaX * sensivityOY);
         }
