@@ -29,6 +29,19 @@ void Tema2::Init()
     fov = 60.f;
     zFar = 200.f;
     zNear = .01f;
+	translateX = 0;
+	translateY = 0;
+	translateZ = 0;
+	scaleX = 1;
+	scaleY = 1;
+	scaleZ = 1;
+	angularStepOX = 0;
+	angularStepOY = 0;
+	angularStepOZ = 0;
+	distanceX = 0;
+	distanceY = 4.f;
+	distanceZ = 5.f;
+
 
     camera = new implemented::Camera();
 
@@ -64,7 +77,7 @@ void Tema2::Init()
         shaders[shader->GetName()] = shader;
 	}
 
-    camera->Set(glm::vec3(0, 1, 1), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
+    camera->Set(glm::vec3(translateX + distanceX, translateY + distanceY, translateZ + distanceZ), glm::vec3(0, 1, 1), glm::vec3(0, 1, 1));
 	projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
 
 }
@@ -86,10 +99,9 @@ void Tema2::Update(float deltaTimeSeconds)
 {
 
 	glm::mat4 modelMatrix = glm::mat4(1);
-	// RenderMesh(meshes["tankcap"], shaders["VertexNormal"], modelMatrix);
-	// RenderMesh(meshes["tankcorp"], shaders["VertexNormal"], modelMatrix);
-	// RenderMesh(meshes["tankroti"], shaders["VertexNormal"], modelMatrix);
-	// RenderMesh(meshes["tankteava"], shaders["VertexNormal"], modelMatrix);
+	modelMatrix *= transform3D::RotateOY(RADIANS(angularStepOY + 90));
+	modelMatrix *= transform3D::Translate(translateX, translateY, translateZ);
+	modelMatrix *= transform3D::Scale(scaleX, scaleY, scaleZ);
 	RenderSimpleMesh(meshes["tankcap"], shaders["myshader"], modelMatrix);
 	RenderSimpleMesh(meshes["tankcorp"], shaders["myshader"], modelMatrix);
 	RenderSimpleMesh(meshes["tankroti"], shaders["myshader"], modelMatrix);
@@ -149,41 +161,46 @@ void Tema2::RenderSimpleMesh(Mesh * mesh, Shader * shader, const glm::mat4 & mod
 void Tema2::OnInputUpdate(float deltaTime, int mods)
 {
 	// move the camera only if MOUSE_RIGHT button is pressed
-	if (window->MouseHold(GLFW_MOUSE_BUTTON_RIGHT))
+	// if (window->MouseHold(GLFW_MOUSE_BUTTON_RIGHT))
+	// {
+	// 	float cameraSpeed = 2.0f;
+
+	// 	if (window->KeyHold(GLFW_KEY_W))
+	// 	{
+	// 		// Translate the camera forward
+	// 		camera->TranslateForward(deltaTime * cameraSpeed);
+	// 	}
+	// 	if (window->KeyHold(GLFW_KEY_A))
+	// 	{
+	// 		// Translate the camera to the left
+	// 		camera->TranslateRight(-deltaTime * cameraSpeed);
+	// 	}
+	// 	if (window->KeyHold(GLFW_KEY_S))
+	// 	{
+	// 		// Translate the camera backwards
+	// 		camera->TranslateForward(-deltaTime * cameraSpeed);
+	// 	}
+	// 	if (window->KeyHold(GLFW_KEY_D))
+	// 	{
+	// 		// Translate the camera to the right
+	// 		camera->TranslateRight(deltaTime * cameraSpeed);
+	// 	}
+	// 	if (window->KeyHold(GLFW_KEY_Q))
+	// 	{
+	// 		// Translate the camera down
+	// 		camera->TranslateUpward(-deltaTime * cameraSpeed);
+	// 	}
+	// 	if (window->KeyHold(GLFW_KEY_E))
+	// 	{
+	// 		// Translate the camera up
+	// 		camera->TranslateUpward(deltaTime * cameraSpeed);
+	// 	}
+
+	// }
+	if(window->KeyHold(GLFW_KEY_W))
 	{
-		float cameraSpeed = 2.0f;
-
-		if (window->KeyHold(GLFW_KEY_W))
-		{
-			// Translate the camera forward
-			camera->TranslateForward(deltaTime * cameraSpeed);
-		}
-		if (window->KeyHold(GLFW_KEY_A))
-		{
-			// Translate the camera to the left
-			camera->TranslateRight(-deltaTime * cameraSpeed);
-		}
-		if (window->KeyHold(GLFW_KEY_S))
-		{
-			// Translate the camera backwards
-			camera->TranslateForward(-deltaTime * cameraSpeed);
-		}
-		if (window->KeyHold(GLFW_KEY_D))
-		{
-			// Translate the camera to the right
-			camera->TranslateRight(deltaTime * cameraSpeed);
-		}
-		if (window->KeyHold(GLFW_KEY_Q))
-		{
-			// Translate the camera down
-			camera->TranslateUpward(-deltaTime * cameraSpeed);
-		}
-		if (window->KeyHold(GLFW_KEY_E))
-		{
-			// Translate the camera up
-			camera->TranslateUpward(deltaTime * cameraSpeed);
-		}
-
+		translateX += deltaTime * speed;
+		camera->TranslateForward(deltaTime * speed * 0.8f);
 	}
 }
 
