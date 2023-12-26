@@ -62,7 +62,7 @@ void Lab7::Init()
     // Light & material properties
     {
         lightPosition = glm::vec3(0, 1, 1);
-        secondLightPosition = glm::vec3(0, 1, 1);
+        secondLightPosition = glm::vec3(0, 100, 1);
         materialShininess = 30;
         materialKd = 0.5;
         materialKs = 0.5;
