@@ -41,6 +41,7 @@ namespace m1
       float angularStepOX, angularStepOY, angularStepOZ;
       float distanceX, distanceY, distanceZ;
       float speed = 2.0f;
+      float rotationSpeed = 30.0f;
       GLfloat fov, zNear, zFar;
 
       // TODO(student): If you need any other class variables, define them here.
