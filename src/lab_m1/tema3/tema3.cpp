@@ -129,30 +129,6 @@ void Tema3::Init()
         shaders[shader->GetName()] = shader;
     }
 
-    {
-        Shader *shader = new Shader("bec");
-        shader->AddShader(
-            PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "BecVertex.glsl"),
-            GL_VERTEX_SHADER);
-        shader->AddShader(
-            PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "BecFragment.glsl"),
-            GL_FRAGMENT_SHADER);
-        shader->CreateAndLink();
-        shaders[shader->GetName()] = shader;
-    }
-
-    {
-        Shader *shader = new Shader("spot");
-        shader->AddShader(
-            PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "SpulaiVertex.glsl"),
-            GL_VERTEX_SHADER);
-        shader->AddShader(
-            PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "SpulaiFragment.glsl"),
-            GL_FRAGMENT_SHADER);
-        shader->CreateAndLink();
-        shaders[shader->GetName()] = shader;
-    }
-
     camera->Set(glm::vec3(0, 2, 3.5f), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
     projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
 
@@ -166,11 +142,11 @@ void Tema3::Init()
         lightPosition[1] = glm::vec3(5.f, 0, 0);
         lightDirection[1] = glm::vec3(0, -1, 0);
         lightColor[1] = glm::vec3(1, 1, 1);
-        type[1] = 0;
+        type[1] = 1;
         lightPosition[0] = glm::vec3(30.f, 20.5f, 0.5f);
         lightDirection[0] = glm::vec3(0, 1, 0);
         lightColor[0] = glm::vec3(1, 1, 1);
-        type[0] = 0;
+        type[0] = 1;
     }
 
 }
@@ -309,6 +285,9 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
 
     int materialKsLocation = glGetUniformLocation(shader->program, "material_ks");
     glUniform1f(materialKsLocation, materialKs);
+
+    int cutoffLocation = glGetUniformLocation(shader->program, "cutoff");
+    glUniform1f(cutoffLocation, cut_off);
 
     // mesh->Render();
     glBindVertexArray(mesh->GetBuffers()->m_VAO);

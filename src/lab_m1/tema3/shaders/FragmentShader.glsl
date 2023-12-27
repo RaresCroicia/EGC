@@ -45,20 +45,20 @@ vec3 point_light_contribution(vec3 light_pos, vec3 light_color, vec3 light_dir, 
     float d = distance(light_pos, world_position);
     float attenuation = 1.0 / (1 + 0.1 * d + 0.2 * d * d);
     float light = ambient_light + attenuation * (diffuse_light + specular_light);
-    // if (type != 0) {
+    if (type != 0) {
         
-    //     float cutoff = radians(cut_off);
-    //     light_dir = normalize(light_dir);
-    //     float spot_light = dot(-L, light_dir);
-    //     float spot_light_limit = cos(cutoff);
-    //     if(spot_light > spot_light_limit) {
-    //         float linear_att = (spot_light - spot_light_limit) / (1.0f - spot_light_limit);
-    //         float light_att_factor = pow(linear_att, 2);
-    //         light = ambient_light + light_att_factor * (diffuse_light + specular_light); 
-    //     } else {
-    //         light = ambient_light;
-    //     }
-    // }
+        float cutoff = radians(cut_off);
+        light_dir = normalize(light_dir);
+        float spot_light = dot(-L, light_dir);
+        float spot_light_limit = cos(cutoff);
+        if(spot_light > spot_light_limit) {
+            float linear_att = (spot_light - spot_light_limit) / (1.0f - spot_light_limit);
+            float light_att_factor = pow(linear_att, 2);
+            light = ambient_light + light_att_factor * (diffuse_light + specular_light); 
+        } else {
+            light = ambient_light;
+        }
+    }
     color = light_color * light; 
     return color;
 }
@@ -81,7 +81,7 @@ void main()
     }
     
     color.rgb *= 0.1;
-    for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < 1; i++) {
         vec3 light_pos = point_light_pos[i];
         vec3 light_color = point_light_color[i];
         if(i == 1)
