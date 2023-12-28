@@ -36,7 +36,7 @@ void Lab5::Init()
     zNear = .01f;
     projectionType = true;
 
-    camera = new implemented::LabCamera();
+    camera = new implemented::Camera();
     camera->Set(glm::vec3(0, 2, 3.5f), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
 
     {

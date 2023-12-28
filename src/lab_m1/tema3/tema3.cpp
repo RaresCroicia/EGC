@@ -22,23 +22,6 @@ Tema3::~Tema3()
 
 void Tema3::Init()
 {
-    fov = 60.f;
-    zFar = 200.f;
-    zNear = .01f;
-    translateX = 0;
-    translateY = 0;
-    translateZ = 0;
-    scaleX = 1;
-    scaleY = 1;
-    scaleZ = 1;
-    angularStepOX = 0;
-    angularStepOY = 0;
-    angularStepOZ = 0;
-    distanceX = 0;
-    distanceY = 3.5f;
-    distanceZ = 5.f;
-
-    camera = new implemented::CameraT3();
     {
         const string sourceTextureDir = PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "altapa.jpg");
         Texture2D *texture = new Texture2D();
@@ -129,9 +112,6 @@ void Tema3::Init()
         shaders[shader->GetName()] = shader;
     }
 
-    camera->Set(glm::vec3(0, 2, 3.5f), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
-    projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
-
     // Light & material properties
     {
         materialShininess = 30;
@@ -139,14 +119,17 @@ void Tema3::Init()
         materialKs = 0.5;
     }
     {
-        lightPosition[1] = glm::vec3(5.f, 0, 0);
-        lightDirection[1] = glm::vec3(0, -1, 0);
+        lightPosition[1] = glm::vec3(20.f, 1.f, 12.f);
+        lightDirection[1] = glm::vec3(1, -1, 0);
         lightColor[1] = glm::vec3(1, 1, 1);
-        type[1] = 1;
-        lightPosition[0] = glm::vec3(30.f, 20.5f, 0.5f);
-        lightDirection[0] = glm::vec3(0, 1, 0);
+        type[1] = 0;
+        lightPosition[0] = glm::vec3(30.f, 20.f, 0.f);
+        lightDirection[0] = glm::vec3(-1, -1, 0);
         lightColor[0] = glm::vec3(1, 1, 1);
-        type[0] = 1;
+        type[0] = 2;
+    }
+    {
+        becLightColor = glm::vec3(0, 1, 0);
     }
 
 }
@@ -164,6 +147,9 @@ void Tema3::FrameStart()
 
 void Tema3::RenderLighthouse(float baseHeight)
 {
+    becLightPos = glm::vec3(0, baseHeight, 0);
+    becLightDir = glm::vec3(0, 1, 0);
+
     glm::mat4 modelMatrix = glm::mat4(1);
     modelMatrix *= transform3D::Translate(0, 0, 0);
     modelMatrix *= transform3D::Scale(1.f, baseHeight, 1.f);
@@ -180,11 +166,11 @@ void Tema3::RenderLighthouse(float baseHeight)
 
 void Tema3::RenderBoat(int i) {
     glm::mat4 modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(lightPosition[i].x, lightPosition[i].y, lightPosition[i].z);
+    modelMatrix *= transform3D::Translate(lightPosition[i].x, lightPosition[i].y - 1, lightPosition[i].z);
     modelMatrix *= transform3D::Scale(3.f, .5f, 0.2f);
     RenderSimpleMesh(meshes["box"], shaders["myshader"], modelMatrix, mapTextures["lemne"]);
     modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(lightPosition[i].x, lightPosition[i].y, lightPosition[i].z);
+    modelMatrix *= transform3D::Translate(lightPosition[i].x, lightPosition[i].y - 1, lightPosition[i].z);
     modelMatrix *= transform3D::Scale(1.5f, 2.5f, 1.f);
     RenderSimpleMesh(meshes["triangle"], shaders["myshader"], modelMatrix, NULL);
 }
@@ -202,28 +188,14 @@ void Tema3::Update(float deltaTimeSeconds)
     modelMatrix *= transform3D::Scale(10.f, 1.f, 10.f);
     RenderSimpleMesh(meshes["sphere"], shaders["myshader"], modelMatrix, mapTextures["iarba"]);
     modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(30.0f, 20.5f, 0.5f);
+    modelMatrix *= transform3D::Translate(lightPosition[0].x, lightPosition[0].y, lightPosition[0].z);
     modelMatrix *= transform3D::Scale(2.f, 2.f, 2.f);
     RenderSimpleMesh(meshes["sphere"], shaders["myshader"], modelMatrix, mapTextures["luna"]);
 }
 
 void Tema3::FrameEnd()
 {
-    DrawCoordinateSystem(camera->GetViewMatrix(), projectionMatrix);
-}
-
-void Tema3::RenderMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix)
-{
-    if (!mesh || !shader || !shader->program)
-        return;
-
-    // Render an object using the specified shader and the specified position
-    shader->Use();
-    glUniformMatrix4fv(shader->loc_view_matrix, 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
-    glUniformMatrix4fv(shader->loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-    glUniformMatrix4fv(shader->loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-
-    mesh->Render();
+    // DrawCoordinateSystem();
 }
 
 void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, Texture2D* texture1)
@@ -243,11 +215,13 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
     GLint viewLocation = glGetUniformLocation(shader->program, "View");
-    glm::mat4 viewMatrix = camera->GetViewMatrix();
+    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
     glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
-    GLint projectionLocation = glGetUniformLocation(shader->program, "Projection");
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+    glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
+    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
 
     GLint timeLocation = glGetUniformLocation(shader->program, "Time");
     glUniform1f(timeLocation, Engine::GetElapsedTime());
@@ -267,12 +241,22 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
     int lightDirectionLocation = glGetUniformLocation(shader->program, "point_light_dir");
     glUniform3fv(lightDirectionLocation, NUMBER_OF_LIGHTSS, glm::value_ptr(lightDirection[0]));
     
-    glm::vec3 eyePosition = camera->position;
-    int eyePositionLocation = glGetUniformLocation(shader->program, "eye_position");
-    glUniform3f(eyePositionLocation, eyePosition.x, eyePosition.y, eyePosition.z);
-
     int lightColorLocation = glGetUniformLocation(shader->program, "point_light_color");
     glUniform3fv(lightColorLocation, NUMBER_OF_LIGHTSS, glm::value_ptr(lightColor[0]));
+
+    int becLightPosLocation = glGetUniformLocation(shader->program, "bec_far_pos");
+    glUniform3fv(becLightPosLocation, 1, glm::value_ptr(becLightPos));
+
+    int becLightDirLocation = glGetUniformLocation(shader->program, "bec_far_dir");
+    glUniform3fv(becLightDirLocation, 1, glm::value_ptr(becLightDir));
+
+    int becLightColorLocation = glGetUniformLocation(shader->program, "bec_far_color");
+    glUniform3fv(becLightColorLocation, 1, glm::value_ptr(becLightColor));
+
+    glm::vec3 eyePosition = GetSceneCamera()->m_transform->GetWorldPosition();
+    int eye_position = glGetUniformLocation(shader->program, "eye_position");
+    glUniform3f(eye_position, eyePosition.x, eyePosition.y, eyePosition.z);
+
 
     int typeLocation = glGetUniformLocation(shader->program, "type");
     glUniform1iv(typeLocation, NUMBER_OF_LIGHTSS, &type[0]);
@@ -302,38 +286,15 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
 
 void Tema3::OnInputUpdate(float deltaTime, int mods)
 {
-    if (window->MouseHold(GLFW_MOUSE_BUTTON_RIGHT))
+    float speed = 14;
+
+    if (!window->MouseHold(GLFW_MOUSE_BUTTON_RIGHT))
     {
-        if (window->KeyHold(GLFW_KEY_W))
-        {
-            // Translate the camera forward
-            camera->TranslateForward(deltaTime * speed);
-        }
-        if (window->KeyHold(GLFW_KEY_A))
-        {
-            // Translate the camera to the left
-            camera->TranslateRight(-deltaTime * speed);
-        }
-        if (window->KeyHold(GLFW_KEY_S))
-        {
-            // Translate the camera backwards
-            camera->TranslateForward(-deltaTime * speed);
-        }
-        if (window->KeyHold(GLFW_KEY_D))
-        {
-            // Translate the camera to the right
-            camera->TranslateRight(deltaTime * speed);
-        }
-        if (window->KeyHold(GLFW_KEY_Q))
-        {
-            // Translate the camera down
-            camera->TranslateUpward(-deltaTime * speed);
-        }
-        if (window->KeyHold(GLFW_KEY_E))
-        {
-            // Translate the camera up
-            camera->TranslateUpward(deltaTime * speed);
-        }
+        glm::vec3 up = glm::vec3(0, 1, 0);
+        glm::vec3 right = GetSceneCamera()->m_transform->GetLocalOXVector();
+        glm::vec3 forward = GetSceneCamera()->m_transform->GetLocalOZVector();
+        forward = glm::normalize(glm::vec3(forward.x, 0, forward.z));
+        // TODO(student): Set any other keys that you might need
     }
 }
 
@@ -350,24 +311,6 @@ void Tema3::OnKeyRelease(int key, int mods)
 void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
 {
     // Add mouse move event
-
-    if (window->MouseHold(GLFW_MOUSE_BUTTON_RIGHT))
-    {
-        float sensivityOX = 0.001f;
-        float sensivityOY = 0.001f;
-
-        if (window->GetSpecialKeyState() == 0)
-        {
-            camera->RotateFirstPerson_OX(-deltaY * sensivityOX);
-            camera->RotateFirstPerson_OY(-deltaX * sensivityOY);
-        }
-
-        if (window->GetSpecialKeyState() & GLFW_MOD_CONTROL)
-        {
-            camera->RotateThirdPerson_OX(-deltaY * sensivityOX);
-            camera->RotateThirdPerson_OY(-deltaX * sensivityOY);
-        }
-    }
 }
 
 void Tema3::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)

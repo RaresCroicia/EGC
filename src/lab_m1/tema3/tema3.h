@@ -1,9 +1,8 @@
 #pragma once
 
 #include "components/simple_scene.h"
-#include "lab_m1/tema3/camera.h"
 #include "lab_m1/tema3/transform3D.h"
-
+#include "components/transform.h"
 #define NUMBER_OF_LIGHTSS 2
 
 namespace m1
@@ -21,7 +20,6 @@ namespace m1
       void Update(float deltaTimeSeconds) override;
       void FrameEnd() override;
 
-      void RenderMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix) override;
       void RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, Texture2D *texture1);
       void RenderLighthouse(float);
       void RenderBoat(int);
@@ -36,10 +34,6 @@ namespace m1
       void OnWindowResize(int width, int height) override;
 
    protected:
-      implemented::CameraT3 *camera;
-      glm::mat4 projectionMatrix;
-      bool projectionType;
-
       float translateX, translateY, translateZ;
       float scaleX, scaleY, scaleZ;
       float angularStepOX, angularStepOY, angularStepOZ;
@@ -51,6 +45,9 @@ namespace m1
       glm::vec3 lightPosition[NUMBER_OF_LIGHTSS];
       glm::vec3 lightDirection[NUMBER_OF_LIGHTSS];
       glm::vec3 lightColor[NUMBER_OF_LIGHTSS];
+      glm::vec3 becLightPos;
+      glm::vec3 becLightDir;
+      glm::vec3 becLightColor;
       int type[NUMBER_OF_LIGHTSS];
       unsigned int materialShininess;
       float materialKd;

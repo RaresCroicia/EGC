@@ -40,7 +40,7 @@ void Tema2::Init() {
     distanceZ = 5.f;
 
 
-    camera = new implemented::Camera();
+    camera = new implemented::CameraT2();
     camera->distanceToTarget = sqrt(distanceY * distanceY + distanceZ * distanceZ); {
         Mesh* mesh = new Mesh("tankcap");
         mesh->LoadMesh(PATH_JOIN(window->props.selfDir, RESOURCE_PATH::MODELS, "personals"), "cap.obj");

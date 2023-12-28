@@ -5,9 +5,9 @@
 
 
 namespace implemented {
-    class Camera {
+    class CameraT2 {
     public:
-        Camera() {
+        CameraT2() {
             position = glm::vec3(0, 2, 5);
             forward = glm::vec3(0, 0, -1);
             up = glm::vec3(0, 1, 0);
@@ -15,11 +15,11 @@ namespace implemented {
             distanceToTarget = 2;
         }
 
-        Camera(const glm::vec3& position, const glm::vec3& center, const glm::vec3& up) {
+        CameraT2(const glm::vec3& position, const glm::vec3& center, const glm::vec3& up) {
             Set(position, center, up);
         }
 
-        ~Camera() {
+        ~CameraT2() {
         }
 
         // Update camera

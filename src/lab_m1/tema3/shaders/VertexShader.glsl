@@ -15,14 +15,14 @@ uniform float Time;
 
 // Output
 // TODO(student): Output values to fragment shader
-out vec2 fragTexture;
-out vec3 fragColor;
 out vec3 world_position;
 out vec3 world_normal;
+out vec2 fragTexture;
+out vec3 fragColor;
 
 void main()
 {
-    world_position = (Model * vec4(position, 1)).xyz;
+    world_position = vec3(Model * vec4(position, 1.0)).xyz;
     world_normal = normalize(mat3(Model) * normalize(normal));
     fragTexture = texture;
     fragColor = color + vec3(sin(Time), cos(Time), sin(Time)*cos(Time));

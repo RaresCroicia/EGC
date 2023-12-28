@@ -6,10 +6,10 @@
 
 namespace implemented
 {
-    class LabCamera
+    class Camera
     {
      public:
-        LabCamera()
+        Camera()
         {
             position    = glm::vec3(0, 2, 5);
             forward     = glm::vec3(0, 0, -1);
@@ -18,12 +18,12 @@ namespace implemented
             distanceToTarget = 2;
         }
 
-        LabCamera(const glm::vec3 &position, const glm::vec3 &center, const glm::vec3 &up)
+        Camera(const glm::vec3 &position, const glm::vec3 &center, const glm::vec3 &up)
         {
             Set(position, center, up);
         }
 
-        ~LabCamera()
+        ~Camera()
         { }
 
         // Update camera

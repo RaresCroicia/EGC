@@ -31,7 +31,7 @@ namespace m1
         void OnWindowResize(int width, int height) override;
 
      protected:
-        implemented::LabCamera *camera;
+        implemented::Camera *camera;
         glm::mat4 projectionMatrix;
         bool renderCameraTarget;
         bool projectionType;
