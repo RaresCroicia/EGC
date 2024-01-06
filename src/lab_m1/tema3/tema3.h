@@ -3,8 +3,7 @@
 #include "components/simple_scene.h"
 #include "lab_m1/tema3/transform3D.h"
 #include "lab_m1/tema3/camera.h"
-// #include "components/transform.h"
-#define NUMBER_OF_BOATS 4
+#define NUMBER_OF_BOATS 6
 
 namespace m1
 {
@@ -24,6 +23,7 @@ namespace m1
       void RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, Texture2D *texture1, int isBoat = false);
       void RenderLighthouse(float);
       void RenderBoat(int);
+      void RenderUI(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, const glm::vec3 &color);
 
       void OnInputUpdate(float deltaTime, int mods) override;
       void OnKeyPress(int key, int mods) override;
@@ -70,6 +70,5 @@ namespace m1
       float boatDistances[NUMBER_OF_BOATS];
       float boatDirections[NUMBER_OF_BOATS];
       float boatSpeeds[NUMBER_OF_BOATS];
-      // TODO(student): If you need any other class variables, define them here.
    };
 } // namespace m1

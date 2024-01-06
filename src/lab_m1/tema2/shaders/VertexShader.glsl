@@ -12,6 +12,8 @@ uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Projection;
 uniform float Time;
+uniform vec3 Color;
+uniform int hasColor;
 
 // Output
 // TODO(student): Output values to fragment shader
@@ -27,7 +29,11 @@ void main()
     // fragNormal = vec3(Model * vec4(normal, 0.0));
     fragNormal = normal;
     fragTexture = texture;
-    fragColor = color + vec3(sin(Time), cos(Time), sin(Time)*cos(Time));
+    if(hasColor == 1)
+        fragColor = Color;
+    else
+        fragColor = color;
+    // fragColor = color + vec3(sin(Time), cos(Time), sin(Time)*cos(Time));
     // TODO(student): Compute gl_Position
     vec4 pos = Model * vec4(position, 1.0);
     gl_Position = Projection * View * pos;

@@ -7,11 +7,6 @@
 using namespace std;
 using namespace m1;
 
-/*
- *  To find out more about `FrameStart`, `Update`, `FrameEnd`
- *  and the order in which they are called, see `world.cpp`.
- */
-
 Tema3::Tema3()
 {
 }
@@ -20,12 +15,11 @@ Tema3::~Tema3()
 {
 }
 
-
 void Tema3::Init()
 {
 
     camera = new implemented::CameraT3();
-    camera->Set(glm::vec3(0, 2, 3.5f), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
+    camera->Set(glm::vec3(-20, 15, 0), glm::vec3(30, 5, 0), glm::vec3(0, 1, 0));
     projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
     {
         const string sourceTextureDir = PATH_JOIN(window->props.selfDir, RESOURCE_PATH::TEXTURES, "apa3.jpg");
@@ -121,8 +115,18 @@ void Tema3::Init()
         shader->CreateAndLink();
         shaders[shader->GetName()] = shader;
     }
+    {
+        Shader *shader = new Shader("UI");
+        shader->AddShader(
+            PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "uiVertexShader.glsl"),
+            GL_VERTEX_SHADER);
+        shader->AddShader(
+            PATH_JOIN(window->props.selfDir, SOURCE_PATH::M1, "tema3", "shaders", "uiFragmentShader.glsl"),
+            GL_FRAGMENT_SHADER);
+        shader->CreateAndLink();
+        shaders[shader->GetName()] = shader;
+    }
 
-    // Light & material properties
     {
         materialShininess = 30;
         materialKd = 0.5;
@@ -148,7 +152,7 @@ void Tema3::Init()
             bool ok = false;
             while(!ok) {
                 ok = true;
-                boatDistances[i] = rand() % 360 / 7;
+                boatDistances[i] = rand() % (NUMBER_OF_BOATS * 90) / 7;
                 if(boatDistances[i] < 10) {
                     ok = false;
                     continue;
@@ -173,12 +177,10 @@ void Tema3::Init()
 
 void Tema3::FrameStart()
 {
-    // Clears the color buffer (using the previously set color) and depth buffer
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0, 0.04, 0.07, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::ivec2 resolution = window->GetResolution();
-    // Sets the screen area where to draw
     glViewport(0, 0, resolution.x, resolution.y);
 }
 
@@ -234,6 +236,28 @@ void Tema3::RenderBoat(int i) {
     RenderSimpleMesh(meshes["triangle"], shaders["myshader"], modelMatrix, mapTextures["panza"], 0);
 }
 
+void Tema3::RenderUI(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, const glm::vec3 &color) {
+
+    if (!mesh || !shader || !shader->program)
+        return;
+
+    glUseProgram(shader->program);
+
+    glm::mat4 orthoProjectionMatrix = glm::ortho(0.0f, (float)window->GetResolution().x, 0.0f, (float)window->GetResolution().y, -1.0f, 1.0f);
+
+    int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
+    glUniformMatrix4fv(loc_projection_matrix, 1, GL_FALSE, glm::value_ptr(orthoProjectionMatrix));
+
+    int loc_color = glGetUniformLocation(shader->program, "Color");
+    glUniform3fv(loc_color, 1, glm::value_ptr(color));
+
+    int loc_model_matrix = glGetUniformLocation(shader->program, "Model");
+    glUniformMatrix4fv(loc_model_matrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+    glBindVertexArray(mesh->GetBuffers()->m_VAO);
+    glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
+}
+
 void Tema3::Update(float deltaTimeSeconds)
 {
     projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
@@ -253,19 +277,39 @@ void Tema3::Update(float deltaTimeSeconds)
     modelMatrix *= transform3D::Translate(moonLightPos.x, moonLightPos.y, moonLightPos.z);
     modelMatrix *= transform3D::Scale(12.f, 12.f, 12.f);
     RenderSimpleMesh(meshes["sphere"], shaders["myshader"], modelMatrix, mapTextures["luna"], 0);
-    projectionMatrix = glm::ortho(-10.f, 10.f, -10.f, 10.f, 0.01f, 200.f);
-    glLoadIdentity();
+    int startingX = 150;
+    int startingY = 50;
+    int width = 100;
+    int height = 20;
     modelMatrix = glm::mat4(1);
-    modelMatrix *= transform3D::Translate(1, 0, 0);
-    modelMatrix *= transform3D::Scale(0.5f, 0.5f, 0);
-    RenderSimpleMesh(meshes["quad"], shaders["myshader"], modelMatrix, mapTextures["water"], 1);
-    projectionMatrix = glm::perspective(RADIANS(fov), window->props.aspectRatio, zNear, zFar);
-
+    modelMatrix *= transform3D::Translate(startingX, startingY, 0);
+    modelMatrix *= transform3D::Scale(width, height, 1.f);
+    RenderUI(meshes["quad"], shaders["UI"], modelMatrix, glm::vec3(0, 0, 0));
+    modelMatrix = glm::mat4(1);
+    modelMatrix *= transform3D::Translate(startingX - width * (1.0 - spotFarColor1.b), startingY, 1);
+    modelMatrix *= transform3D::Scale(width * spotFarColor1.b, height, 1.f);
+    RenderUI(meshes["quad"], shaders["UI"], modelMatrix, glm::vec3(0, 0, 1));
+    modelMatrix = glm::mat4(1);
+    modelMatrix *= transform3D::Translate(startingX, startingY + height + 30, 0);
+    modelMatrix *= transform3D::Scale(width, height, 1.f);
+    RenderUI(meshes["quad"], shaders["UI"], modelMatrix, glm::vec3(0, 0, 0));
+    modelMatrix = glm::mat4(1);
+    modelMatrix *= transform3D::Translate(startingX - width * (1.0 - spotFarColor1.g), startingY + height + 30, 1);
+    modelMatrix *= transform3D::Scale(width * spotFarColor1.g, height, 1.f);
+    RenderUI(meshes["quad"], shaders["UI"], modelMatrix, glm::vec3(0, 1, 0));
+    modelMatrix = glm::mat4(1);
+    modelMatrix *= transform3D::Translate(startingX, startingY + 2 * height + 60, 0);
+    modelMatrix *= transform3D::Scale(width, height, 1.f);
+    RenderUI(meshes["quad"], shaders["UI"], modelMatrix, glm::vec3(0, 0, 0));
+    modelMatrix = glm::mat4(1);
+    modelMatrix *= transform3D::Translate(startingX - width * (1.0 - spotFarColor1.r), startingY + 2 * height + 60, 1);
+    modelMatrix *= transform3D::Scale(width * spotFarColor1.r, height, 1.f);
+    RenderUI(meshes["quad"], shaders["UI"], modelMatrix, glm::vec3(2, 0, 0));
 }
 
 void Tema3::FrameEnd()
 {
-    // DrawCoordinateSystem();
+
 }
 
 void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix, Texture2D* texture1, int isBoat)
@@ -295,7 +339,7 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
     GLint viewLocation = glGetUniformLocation(shader->program, "View");
-    glm::mat4 viewMatrix = GetSceneCamera()->GetViewMatrix();
+    glm::mat4 viewMatrix = camera->GetViewMatrix();
     glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 
     int loc_projection_matrix = glGetUniformLocation(shader->program, "Projection");
@@ -375,16 +419,10 @@ void Tema3::RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelM
     int cutoffLocation = glGetUniformLocation(shader->program, "cutoff");
     glUniform1f(cutoffLocation, cut_off);
 
-    // mesh->Render();
     glBindVertexArray(mesh->GetBuffers()->m_VAO);
     glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_INT, 0);
 
 }
-
-/*
- *  These are callback functions. To find more about callbacks and
- *  how they behave, see `input_controller.h`.
- */
 
 void Tema3::OnInputUpdate(float deltaTime, int mods)
 {
@@ -395,32 +433,26 @@ void Tema3::OnInputUpdate(float deltaTime, int mods)
 
 		if (window->KeyHold(GLFW_KEY_W))
 		{
-			// Translate the camera forward
 			camera->TranslateForward(deltaTime * cameraSpeed);
 		}
 		if (window->KeyHold(GLFW_KEY_A))
 		{
-			// Translate the camera to the left
 			camera->TranslateRight(-deltaTime * cameraSpeed);
 		}
 		if (window->KeyHold(GLFW_KEY_S))
 		{
-			// Translate the camera backwards
 			camera->TranslateForward(-deltaTime * cameraSpeed);
 		}
 		if (window->KeyHold(GLFW_KEY_D))
 		{
-			// Translate the camera to the right
 			camera->TranslateRight(deltaTime * cameraSpeed);
 		}
 		if (window->KeyHold(GLFW_KEY_Q))
 		{
-			// Translate the camera down
 			camera->TranslateUpward(-deltaTime * cameraSpeed);
 		}
 		if (window->KeyHold(GLFW_KEY_E))
 		{
-			// Translate the camera up
 			camera->TranslateUpward(deltaTime * cameraSpeed);
 		}
     }
@@ -429,37 +461,31 @@ void Tema3::OnInputUpdate(float deltaTime, int mods)
         spotFarColor1.r = spotFarColor1.r < 1 ? spotFarColor1.r + 0.005 : 1;
         spotFarColor2 = spotFarColor1;
         becLightColor = spotFarColor1;
-        cout << "(" << spotFarColor1.r << " " << spotFarColor1.g << " " << spotFarColor1.b << ")" << endl;
     }
     if (window->KeyHold(GLFW_KEY_O)) {
         spotFarColor1.g = spotFarColor1.g < 1 ? spotFarColor1.g + 0.005 : 1;
         spotFarColor2 = spotFarColor1;
         becLightColor = spotFarColor1;
-        cout << "(" << spotFarColor1.r << " " << spotFarColor1.g << " " << spotFarColor1.b << ")" << endl;
     }
     if (window->KeyHold(GLFW_KEY_P)) {
         spotFarColor1.b = spotFarColor1.b < 1 ? spotFarColor1.b + 0.005 : 1;
         spotFarColor2 = spotFarColor1;
         becLightColor = spotFarColor1;
-        cout << "(" << spotFarColor1.r << " " << spotFarColor1.g << " " << spotFarColor1.b << ")" << endl;
     }
     if (window->KeyHold(GLFW_KEY_J)) {
         spotFarColor1.r = spotFarColor1.r > 0 ? spotFarColor1.r - 0.005 : 0;
         spotFarColor2 = spotFarColor1;
         becLightColor = spotFarColor1;
-        cout << "(" << spotFarColor1.r << " " << spotFarColor1.g << " " << spotFarColor1.b << ")" << endl;
     }
     if (window->KeyHold(GLFW_KEY_K)) {
         spotFarColor1.g = spotFarColor1.g > 0 ? spotFarColor1.g - 0.005 : 0;
         spotFarColor2 = spotFarColor1;
         becLightColor = spotFarColor1;
-        cout << "(" << spotFarColor1.r << " " << spotFarColor1.g << " " << spotFarColor1.b << ")" << endl;
     }
     if (window->KeyHold(GLFW_KEY_L)) {
         spotFarColor1.b = spotFarColor1.b > 0 ? spotFarColor1.b - 0.005 : 0;
         spotFarColor2 = spotFarColor1;
         becLightColor = spotFarColor1;
-        cout << "(" << spotFarColor1.r << " " << spotFarColor1.g << " " << spotFarColor1.b << ")" << endl;
     }
     
 }
@@ -471,7 +497,7 @@ void Tema3::OnKeyPress(int key, int mods)
 
 void Tema3::OnKeyRelease(int key, int mods)
 {
-    // Add key release event
+
 }
 
 void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
@@ -482,18 +508,12 @@ void Tema3::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
         float sensivityOY = 0.001f;
 
         if (window->GetSpecialKeyState() == 0) {
-            // TODO(student): Rotate the camera in first-person mode around
-            // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
-            // variables for setting up the rotation speed.
             camera->RotateFirstPerson_OX(-deltaY * sensivityOX);
             camera->RotateFirstPerson_OY(-deltaX * sensivityOY);
 
         }
 
         if (window->GetSpecialKeyState() & GLFW_MOD_CONTROL) {
-            // TODO(student): Rotate the camera in third-person mode around
-            // OX and OY using `deltaX` and `deltaY`. Use the sensitivity
-            // variables for setting up the rotation speed.
             camera->RotateThirdPerson_OX(-deltaY * sensivityOX);
             camera->RotateThirdPerson_OY(-deltaX * sensivityOY);
         }

@@ -1,7 +1,6 @@
 #version 330
 
 // Input
-// TODO(student): Get values from vertex shader
 in vec3 world_position;
 in vec3 world_normal;
 in vec2 fragTexture;
@@ -22,9 +21,9 @@ uniform float material_kd;
 uniform float material_ks;
 uniform int material_shininess;
 
-uniform vec3 point_light_color[4];
-uniform vec3 point_light_pos[4];
-uniform vec3 point_light_dir[4];
+uniform vec3 point_light_color[6];
+uniform vec3 point_light_pos[6];
+uniform vec3 point_light_dir[6];
 uniform float cutoff;
 
 uniform vec3 bec_far_pos;
@@ -100,7 +99,7 @@ void main()
         float y = fragTexture.y;
         if (moving == 1){
             float wave = (sin(world_position.x * 4.5) + 1) * 0.5;
-            vec2 modulatedCoords = fragTexture + vec2(wave / 100.f + Time / 3.33f, 0.0);
+            vec2 modulatedCoords = fragTexture + vec2(wave / 100.f + Time / 2.f, 0.0);
             color = texture2D(texture_1, vec2(modulatedCoords.x, modulatedCoords.y));
         }
         else
@@ -111,7 +110,7 @@ void main()
     
     if(has_texture != 0 || moving != 0)
         color.rgb *= 0.1;
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < 6; i++) {
         vec3 light_contribution = point_light_contribution(point_light_pos[i], point_light_color[i], point_light_dir[i], 0);
         color.rgb += light_contribution;
     }

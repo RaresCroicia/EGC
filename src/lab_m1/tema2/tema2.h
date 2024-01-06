@@ -3,7 +3,10 @@
 #include "components/simple_scene.h"
 #include "lab_m1/tema2/camera.h"
 #include "lab_m1/tema2/transform3D.h"
+#include "lab_m1/tema2/bullet.h"
 
+#include <vector>
+using namespace std;
 namespace m1
 {
    class Tema2 : public gfxc::SimpleScene
@@ -21,6 +24,7 @@ namespace m1
 
       void RenderMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix) override;
       void RenderSimpleMesh(Mesh *mesh, Shader *shader, const glm::mat4 &modelMatrix);
+      void RenderBullets(float);
 
       void OnInputUpdate(float deltaTime, int mods) override;
       void OnKeyPress(int key, int mods) override;
@@ -43,6 +47,8 @@ namespace m1
       float speed = 2.0f;
       float rotationSpeed = 30.0f;
       GLfloat fov, zNear, zFar;
+      vector<Bullet> bullets;
+
 
       // TODO(student): If you need any other class variables, define them here.
    };
