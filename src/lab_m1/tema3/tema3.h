@@ -3,7 +3,7 @@
 #include "components/simple_scene.h"
 #include "lab_m1/tema3/transform3D.h"
 #include "lab_m1/tema3/camera.h"
-#define NUMBER_OF_BOATS 6
+#define NUMBER_OF_BOATS 7
 
 namespace m1
 {

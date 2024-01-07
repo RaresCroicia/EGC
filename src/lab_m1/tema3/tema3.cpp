@@ -168,7 +168,7 @@ void Tema3::Init()
             if(boatDirections[i] == 0)
                 boatDirections[i] = -1;
             lightColor[i] = glm::vec3(rand() % 100 / 100.f, rand() % 100 / 100.f, rand() % 100 / 100.f);
-            boatSpeeds[i] = rand() % 100 / 100.f + 0.5f;
+            boatSpeeds[i] = rand() % 100 / 1000.f + 1.f;
         }
     }
 

@@ -21,9 +21,9 @@ uniform float material_kd;
 uniform float material_ks;
 uniform int material_shininess;
 
-uniform vec3 point_light_color[6];
-uniform vec3 point_light_pos[6];
-uniform vec3 point_light_dir[6];
+uniform vec3 point_light_color[7];
+uniform vec3 point_light_pos[7];
+uniform vec3 point_light_dir[7];
 uniform float cutoff;
 
 uniform vec3 bec_far_pos;
@@ -110,7 +110,7 @@ void main()
     
     if(has_texture != 0 || moving != 0)
         color.rgb *= 0.1;
-    for(int i = 0; i < 6; i++) {
+    for(int i = 0; i < 7; i++) {
         vec3 light_contribution = point_light_contribution(point_light_pos[i], point_light_color[i], point_light_dir[i], 0);
         color.rgb += light_contribution;
     }
